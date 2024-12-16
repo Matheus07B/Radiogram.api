@@ -1,4 +1,4 @@
-import subprocess
+# import subprocess
 
 import random
 import string
@@ -8,7 +8,9 @@ from email.mime.multipart import MIMEMultipart
 from flask import Flask, request, jsonify
 import sqlite3
 import bcrypt
-from flask_cors import CORS
+
+# from flask_cors import CORS
+
 from datetime import datetime, timedelta
 
 # Flask para a criação da API de fato!
@@ -237,4 +239,4 @@ def alterar_senha():
 
 
 if __name__ == '__main__':
-    app.run(debug=True, host='192.168.1.15', port=5000)
+    app.run(host='0.0.0.0', port=5000)
