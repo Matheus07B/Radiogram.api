@@ -1,5 +1,4 @@
 Flask
-sqlite3-binary
 bcrypt
 smtplib
 email
