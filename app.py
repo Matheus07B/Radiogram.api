@@ -9,7 +9,7 @@ from flask import Flask, request, jsonify
 import sqlite3
 import bcrypt
 
-# from flask_cors import CORS
+from flask_cors import CORS
 
 from datetime import datetime, timedelta
 
