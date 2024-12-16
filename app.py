@@ -1,5 +1,4 @@
-# import subprocess
-
+# Mudei aqui ----
 import random
 import string
 import smtplib
@@ -8,18 +7,13 @@ from email.mime.multipart import MIMEMultipart
 from flask import Flask, request, jsonify
 import sqlite3
 import bcrypt
-
-from flask_cors import CORS
-
 from datetime import datetime, timedelta
 
 # Flask para a criação da API de fato!
-# Cors permite a conexão da API com qualquer porta.
 # sqlite3 obviamente é o banco de dados.
-# bcrypt para criptografar as senhas, OBS: tive que baixar o rust para usar essa biblioteca.
+# bcrypt para criptografar as senhas.
 
 app = Flask(__name__)
-CORS(app)
 
 DATABASE = 'database.db'
 
@@ -46,7 +40,7 @@ def criar_tabela_codigos():
     conn.close()
 
 criar_tabela_codigos()
-
+# (O restante do código permanece igual) e aqui. ----
 
 # Endpoint de cadastro de usuários
 @app.route('/cadastrar', methods=['POST'])
