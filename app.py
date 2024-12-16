@@ -42,6 +42,9 @@ def criar_tabela_codigos():
 criar_tabela_codigos()
 # (O restante do código permanece igual) e aqui. ----
 
+@app.route('/', methods=['GET'])
+    return jsonify({"message": "API funcionando corretamente!"})
+
 # Endpoint de cadastro de usuários
 @app.route('/cadastrar', methods=['POST'])
 def cadastrar():
