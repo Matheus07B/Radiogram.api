@@ -1,3 +1,4 @@
+# Mudei aqui ----
 import random
 import string
 import smtplib
@@ -7,17 +8,18 @@ from flask import Flask, request, jsonify
 import sqlite3
 import bcrypt
 from datetime import datetime, timedelta
-import jwt  # Importando o JWT
-from functools import wraps
 
-# Configurações de chave secreta para JWT
-SECRET_KEY = '8d8f3a2b84c56b7d6d981234b029dd7c183b592dc76849241afc2688a59d8be7'
-
-# Flask e CORS
+# remover caso necessário, e tmb no req.txt
 from flask_cors import CORS
 
 app = Flask(__name__)
 CORS(app)
+
+# Flask para a criação da API de fato!
+# sqlite3 obviamente é o banco de dados.
+# bcrypt para criptografar as senhas.
+
+# app = Flask(__name__)
 
 DATABASE = 'database.db'
 
@@ -44,30 +46,11 @@ def criar_tabela_codigos():
     conn.close()
 
 criar_tabela_codigos()
+# (O restante do código permanece igual) e aqui. ----
 
 @app.route('/')
 def home():
     return jsonify({"message": "API funcionando corretamente!"})
-
-# Função para verificar o token JWT em endpoints protegidos
-def verificar_token(func):
-    @wraps(func)
-    def decorator(*args, **kwargs):
-        token = request.headers.get('Authorization')
-        if not token:
-            return jsonify({"erro": "Token não fornecido"}), 401
-
-        try:
-            token = token.split()[1]  # Remove 'Bearer' do token
-            payload = jwt.decode(token, SECRET_KEY, algorithms=['HS256'])
-            request.user_id = payload['user_id']  # Adiciona o user_id à requisição
-        except jwt.ExpiredSignatureError:
-            return jsonify({"erro": "Token expirado"}), 401
-        except jwt.InvalidTokenError:
-            return jsonify({"erro": "Token inválido"}), 401
-
-        return func(*args, **kwargs)
-    return decorator
 
 # Endpoint de cadastro de usuários
 @app.route('/cadastrar', methods=['POST'])
@@ -80,11 +63,13 @@ def cadastrar():
     if not nome or not senha or not email:
         return jsonify({"erro": "Nome, email e senha são obrigatórios"}), 400
 
+    # Criptografar a senha
     senha_criptografada = bcrypt.hashpw(senha.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
 
     conn = get_db_connection()
     cursor = conn.cursor()
 
+    # Verificar se o nome ou email já existem
     cursor.execute('SELECT 1 FROM usuarios WHERE nome = ? OR email = ?', (nome, email))
     if cursor.fetchone():
         conn.close()
@@ -102,7 +87,22 @@ def cadastrar():
     return jsonify({"mensagem": "Usuário registrado com sucesso!"}), 201
 
 
-# Endpoint de login com verificação de senha criptografada e geração de token JWT
+# Endpoint para listar usuários (sem retornar senhas)
+@app.route('/listar-usuarios', methods=['GET'])
+def listar_usuarios():
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    cursor.execute('SELECT id, nome, email FROM usuarios')  # Apenas ID, nome e email (sem senha)
+    usuarios = cursor.fetchall()
+    conn.close()
+
+    # Formatar os resultados como uma lista de dicionários
+    resultado = [{"id": usuario["id"], "nome": usuario["nome"], "email": usuario["email"]} for usuario in
+    usuarios]
+    return jsonify(resultado)
+
+
+# Endpoint para login com verificação de senha criptografada
 @app.route('/login', methods=['POST'])
 def login():
     dados = request.json
@@ -119,31 +119,9 @@ def login():
     conn.close()
 
     if usuario and bcrypt.checkpw(senha.encode('utf-8'), usuario["senha"].encode('utf-8')):
-        # Gerar o token JWT
-        payload = {
-            'user_id': usuario["id"],
-            'email': usuario["email"],
-            'exp': datetime.utcnow() + timedelta(hours=1)  # Expira em 1 hora
-        }
-        token = jwt.encode(payload, SECRET_KEY, algorithm='HS256')
-
-        return jsonify({"mensagem": "Login realizado com sucesso!", "token": token})
+        return jsonify({"mensagem": "Login realizado com sucesso!", "usuario": {"id": usuario["id"], "email": usuario["email"]}})
     else:
         return jsonify({"erro": "Credenciais inválidas"}), 401
-
-
-# Endpoint para listar usuários (apenas com autenticação)
-@app.route('/listar-usuarios', methods=['GET'])
-@verificar_token  # Protege este endpoint com verificação de token
-def listar_usuarios():
-    conn = get_db_connection()
-    cursor = conn.cursor()
-    cursor.execute('SELECT id, nome, email FROM usuarios')  # Apenas ID, nome e e-mail
-    usuarios = cursor.fetchall()
-    conn.close()
-
-    resultado = [{"id": usuario["id"], "nome": usuario["nome"], "email": usuario["email"]} for usuario in usuarios]
-    return jsonify(resultado)
 
 
 # Endpoint para solicitar recuperação de senha (envio de código)
@@ -215,6 +193,7 @@ def validar_codigo():
     conn = get_db_connection()
     cursor = conn.cursor()
 
+    # Buscar código no banco de dados
     cursor.execute('''
         SELECT * FROM codigos_recuperacao WHERE email = ? AND codigo = ? AND expirado = 0
     ''', (email, codigo))
@@ -224,14 +203,17 @@ def validar_codigo():
         conn.close()
         return jsonify({"erro": "Código inválido ou expirado"}), 400
 
+    # Verificar se o código expirou
     data_criacao = datetime.strptime(resultado['data_criacao'], '%Y-%m-%d %H:%M:%S')
     if datetime.now() > data_criacao + timedelta(minutes=10):
+        # Marcar como expirado
         cursor.execute('UPDATE codigos_recuperacao SET expirado = 1 WHERE id = ?', (resultado['id'],))
         conn.commit()
         conn.close()
         return jsonify({"erro": "Código expirado"}), 400
 
     conn.close()
+
     return jsonify({"mensagem": "Código validado com sucesso!"}), 200
 
 
@@ -245,8 +227,10 @@ def alterar_senha():
     if not email or not nova_senha:
         return jsonify({"erro": "E-mail e nova senha são obrigatórios"}), 400
 
+    # Criptografar a nova senha
     senha_criptografada = bcrypt.hashpw(nova_senha.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
 
+    # Atualizar a senha no banco de dados
     conn = get_db_connection()
     cursor = conn.cursor()
     cursor.execute('''
