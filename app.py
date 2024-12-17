@@ -9,6 +9,7 @@ import sqlite3
 import bcrypt
 from datetime import datetime, timedelta
 
+# remover caso necessário, e tmb no req.txt
 from flask_cors import CORS
 
 app = Flask(__name__)
