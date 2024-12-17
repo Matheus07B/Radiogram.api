@@ -9,11 +9,16 @@ import sqlite3
 import bcrypt
 from datetime import datetime, timedelta
 
+from flask_cors import CORS
+
+app = Flask(__name__)
+CORS(app)
+
 # Flask para a criação da API de fato!
 # sqlite3 obviamente é o banco de dados.
 # bcrypt para criptografar as senhas.
 
-app = Flask(__name__)
+# app = Flask(__name__)
 
 DATABASE = 'database.db'
 
