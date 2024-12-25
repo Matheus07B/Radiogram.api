@@ -148,7 +148,7 @@ def listar_usuarios():
 
 # Endpoint para solicitar recuperação de senha (envio de código)
 @app.route('/solicitar-recuperacao', methods=['POST'])
-@verificar_token  # Protege este endpoint com verificação de token
+# @verificar_token  # Protege este endpoint com verificação de token
 def solicitar_recuperacao():
     dados = request.json
     email = dados.get('email')
