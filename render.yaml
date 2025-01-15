@@ -3,7 +3,7 @@ services:
     name: app-api
     env: python
     buildCommand: pip install -r requirements.txt
-    startCommand: gunicorn -b 0.0.0.0:8000 "app:create_app()"
+    startCommand: gunicorn -b 0.0.0.0:8000 "run:create_app()"
     plan: free
     branch: main
     healthCheckPath:
