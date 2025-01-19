@@ -11,11 +11,38 @@ def login():
     email = dados.get('email')
     senha = dados.get('senha')
 
-    user = find_user_by_email(email)
-    if user and check_password(senha, user["senha"]):
-        token = generate_token(user["id"], user["email"])
-        return jsonify({"token": token}), 200
-    return jsonify({"erro": "Credenciais inválidas"}), 401
+    if not email or not senha:
+        return jsonify({"erro": "Nome e senha são obrigatórios"}), 400
+
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    cursor.execute('SELECT id, nome, email, senha FROM usuarios WHERE email = ?', (email,))
+    usuario = cursor.fetchone()
+    conn.close()
+
+    if usuario and bcrypt.checkpw(senha.encode('utf-8'), usuario["senha"].encode('utf-8')):
+        # Gerar o token JWT
+        payload = {
+            'user_id': usuario["id"],
+            'email': usuario["email"],
+            'exp': datetime.utcnow() + timedelta(hours=1)  # Expira em 1 hora
+        }
+        token = jwt.encode(payload, SECRET_KEY, algorithm='HS256')
+
+        return jsonify({"mensagem": "Login realizado com sucesso!", "token": token})
+    else:
+        return jsonify({"erro": "Credenciais inválidas"}), 401
+
+# def login():
+#     dados = request.json
+#     email = dados.get('email')
+#     senha = dados.get('senha')
+
+#     user = find_user_by_email(email)
+#     if user and check_password(senha, user["senha"]):
+#         token = generate_token(user["id"], user["email"])
+#         return jsonify({"token": token}), 200
+#     return jsonify({"erro": "Credenciais inválidas"}), 401
 
 
 # from flask import Blueprint, request, jsonify
