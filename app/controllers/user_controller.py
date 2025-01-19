@@ -5,7 +5,7 @@ from app.utils.decorators import verificar_token
 user_blueprint = Blueprint('users', __name__)
 
 @user_blueprint.route('/listar', methods=['GET'])
-@verificar_token  # Protege este endpoint com verificação de token
+# @verificar_token  # Protege este endpoint com verificação de token
 def listar_usuarios():
     conn = get_db_connection()
     cursor = conn.cursor()
