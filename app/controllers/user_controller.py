@@ -5,8 +5,13 @@ from app.utils.decorators import verificar_token
 user_blueprint = Blueprint('users', __name__)
 
 @user_blueprint.route('/listar', methods=['GET'])
-# @verificar_token
+@verificar_token  # Protege este endpoint com verificação de token
 def listar_usuarios():
-    users = get_all_users() # Lista de objetos sqlite3.Row
-    users_list = [dict(row) for row in users] # Converte cada linha em um dicionário
-    return jsonify({"usuarios": users_list}), 200
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    cursor.execute('SELECT id, nome, email FROM usuarios')  # Apenas ID, nome e e-mail
+    usuarios = cursor.fetchall()
+    conn.close()
+
+    resultado = [{"id": usuario["id"], "nome": usuario["nome"], "email": usuario["email"]} for usuario in usuarios]
+    return jsonify(resultado)
