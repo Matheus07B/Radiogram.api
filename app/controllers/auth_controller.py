@@ -3,7 +3,7 @@ import bcrypt
 import jwt
 from datetime import datetime, timedelta
 from app.models.user_model import find_user_by_email
-from app.db import get_db_connection  # Certifique-se de importar corretamente a função
+from app.models.database import get_db_connection  # Certifique-se de importar corretamente a função
 import os
 
 auth_blueprint = Blueprint('login', __name__)
