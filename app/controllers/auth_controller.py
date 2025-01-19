@@ -28,7 +28,7 @@ def login():
         payload = {
             'user_id': usuario["id"],
             'email': usuario["email"],
-            'exp': datetime.utcnow() + timedelta(hours=1)  # Expira em 1 hora
+            'exp': datetime.utcnow() + timedelta(seconds=30)  # Expira em 1 hora
         }
         token = jwt.encode(payload, SECRET_KEY, algorithm='HS256')
         return jsonify({"mensagem": "Login realizado com sucesso!", "token": token})
