@@ -7,11 +7,12 @@ def create_app():
     app = Flask(__name__)
     CORS(app)
 
-    # Configurações adicionais (Ex.: secret key)
-    app.config.from_object('config')
+    # Carrega as configurações
+    app.config.from_object('config.Config')  # Certifique-se de referenciar a classe Config corretamente
 
-    # Inicializa o banco de dados
-    init_db()
+    # Inicializa o banco de dados dentro do contexto da app
+    with app.app_context():
+        init_db()
 
     # Registra as rotas
     register_routes(app)

@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Menu Inicial</title>
+</head>
+<body>
+    <h2>Menu Inicial</h2>
+    <p id="mensagem"></p>
+
+    <script>
+        async function carregarMenu() {
+            const response = await fetch("http://127.0.0.1:5000/menu", {
+                method: "GET",
+                credentials: "include"  // Inclui os cookies da sessão
+            });
+
+            const resultado = await response.json();
+            const mensagemEl = document.getElementById("mensagem");
+
+            if (response.ok) {
+                mensagemEl.textContent = resultado.mensagem;
+            } else {
+                alert(resultado.mensagem);
+                // Redireciona de volta para o login
+                window.location.href = "index.html";
+            }
+        }
+
+        // Carrega o menu inicial ao abrir a página
+        carregarMenu();
+    </script>
+</body>
+</html>
