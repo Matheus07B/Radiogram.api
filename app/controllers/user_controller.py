@@ -1,6 +1,7 @@
 from flask import Blueprint, jsonify
 from app.models.user_model import get_all_users
 from app.utils.decorators import verificar_token
+from app.models.database import get_db_connection
 
 user_blueprint = Blueprint('users', __name__)
 
