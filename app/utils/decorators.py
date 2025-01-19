@@ -11,10 +11,12 @@ def verificar_token(func):
 
         try:
             token = token.split()[1]  # Remove 'Bearer' do token
-            payload = decode_token(token)
-            request.user_id = payload['user_id']
-        except Exception:
-            return jsonify({"erro": "Token inválido ou expirado"}), 401
+            payload = jwt.decode(token, SECRET_KEY, algorithms=['HS256'])
+            request.user_id = payload['user_id']  # Adiciona o user_id à requisição
+        except jwt.ExpiredSignatureError:
+            return jsonify({"erro": "Token expirado"}), 401
+        except jwt.InvalidTokenError:
+            return jsonify({"erro": "Token inválido"}), 401
 
         return func(*args, **kwargs)
     return decorator
