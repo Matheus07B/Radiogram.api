@@ -3,9 +3,9 @@ from app.services.jwt_service import generate_token
 from app.services.bcrypt_service import check_password
 from app.models.user_model import find_user_by_email
 
-auth_blueprint = Blueprint('auth', __name__)
+auth_blueprint = Blueprint('login', __name__)
 
-@auth_blueprint.route('/login', methods=['POST'])
+@auth_blueprint.route('/', methods=['POST'])
 def login():
     dados = request.json
     email = dados.get('email')

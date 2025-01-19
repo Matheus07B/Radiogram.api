@@ -24,7 +24,7 @@ def register_routes(app):
     app.register_blueprint(connection_blueprint, url_prefix='/connection')
 
     # autenticação aqui
-    app.register_blueprint(auth_blueprint, url_prefix='/auth')
+    app.register_blueprint(auth_blueprint, url_prefix='/login')
 
     # usuarios
     app.register_blueprint(user_blueprint, url_prefix='/users')
