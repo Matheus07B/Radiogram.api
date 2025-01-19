@@ -1,9 +1,13 @@
 from flask import Blueprint, request, jsonify
-from app.services.jwt_service import generate_token
-from app.services.bcrypt_service import check_password
+import bcrypt
+import jwt
+from datetime import datetime, timedelta
 from app.models.user_model import find_user_by_email
+from app.db import get_db_connection  # Certifique-se de importar corretamente a função
+import os
 
 auth_blueprint = Blueprint('login', __name__)
+SECRET_KEY = os.environ.get("SECRET_KEY", "minha-chave-secreta")
 
 @auth_blueprint.route('/', methods=['POST'])
 def login():
@@ -21,38 +25,25 @@ def login():
     conn.close()
 
     if usuario and bcrypt.checkpw(senha.encode('utf-8'), usuario["senha"].encode('utf-8')):
-        # Gerar o token JWT
         payload = {
             'user_id': usuario["id"],
             'email': usuario["email"],
             'exp': datetime.utcnow() + timedelta(hours=1)  # Expira em 1 hora
         }
         token = jwt.encode(payload, SECRET_KEY, algorithm='HS256')
-
         return jsonify({"mensagem": "Login realizado com sucesso!", "token": token})
     else:
         return jsonify({"erro": "Credenciais inválidas"}), 401
 
-# def login():
-#     dados = request.json
-#     email = dados.get('email')
-#     senha = dados.get('senha')
-
-#     user = find_user_by_email(email)
-#     if user and check_password(senha, user["senha"]):
-#         token = generate_token(user["id"], user["email"])
-#         return jsonify({"token": token}), 200
-#     return jsonify({"erro": "Credenciais inválidas"}), 401
-
 
 # from flask import Blueprint, request, jsonify
 # from app.services.jwt_service import generate_token
-# from app.models.database import get_db_connection
-# import bcrypt
+# from app.services.bcrypt_service import check_password
+# from app.models.user_model import find_user_by_email
 
-# auth_bp = Blueprint('auth', __name__)
+# auth_blueprint = Blueprint('login', __name__)
 
-# @auth_bp.route('/login', methods=['POST'])
+# @auth_blueprint.route('/', methods=['POST'])
 # def login():
 #     dados = request.json
 #     email = dados.get('email')
@@ -68,8 +59,14 @@ def login():
 #     conn.close()
 
 #     if usuario and bcrypt.checkpw(senha.encode('utf-8'), usuario["senha"].encode('utf-8')):
-#         # Gerar o token JWT usando o serviço
-#         token = generate_token(user_id=usuario["id"], email=usuario["email"])
+#         # Gerar o token JWT
+#         payload = {
+#             'user_id': usuario["id"],
+#             'email': usuario["email"],
+#             'exp': datetime.utcnow() + timedelta(hours=1)  # Expira em 1 hora
+#         }
+#         token = jwt.encode(payload, SECRET_KEY, algorithm='HS256')
+
 #         return jsonify({"mensagem": "Login realizado com sucesso!", "token": token})
 #     else:
 #         return jsonify({"erro": "Credenciais inválidas"}), 401
