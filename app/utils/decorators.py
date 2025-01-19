@@ -1,6 +1,8 @@
+# from app.services.jwt_service import decode_token
 from flask import request, jsonify
 from functools import wraps
-from app.services.jwt_service import decode_token
+import jwt  # Certifique-se de importar o PyJWT
+from config import Config  # Importe as configurações
 
 def verificar_token(func):
     @wraps(func)
@@ -11,7 +13,7 @@ def verificar_token(func):
 
         try:
             token = token.split()[1]  # Remove 'Bearer' do token
-            payload = jwt.decode(token, SECRET_KEY, algorithms=['HS256'])
+            payload = jwt.decode(token, Config.SECRET_KEY, algorithms=['HS256'])
             request.user_id = payload['user_id']  # Adiciona o user_id à requisição
         except jwt.ExpiredSignatureError:
             return jsonify({"erro": "Token expirado"}), 401
