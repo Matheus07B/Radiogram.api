@@ -9,7 +9,7 @@ import os
 auth_blueprint = Blueprint('login', __name__)
 SECRET_KEY = os.environ.get("SECRET_KEY", "minha-chave-secreta")
 
-@auth_blueprint.route('/', methods=['POST'])
+@auth_blueprint.route('', methods=['POST'])
 def login():
     dados = request.json
     email = dados.get('email')
