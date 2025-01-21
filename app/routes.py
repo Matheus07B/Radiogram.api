@@ -4,14 +4,15 @@
 from flask import jsonify
 
 # connection routes
-from app.status.connection import connection_blueprint
-from app.status.helloworld import helloworld_blueprint
-from app.status.email import email_blueprint
+from app.ping.connection import connection_blueprint
+from app.ping.helloworld import helloworld_blueprint
+from app.ping.email import email_blueprint
 
 # main routes
-from app.controllers.auth_controller import auth_blueprint
-from app.controllers.user_controller import user_blueprint
-from app.controllers.recovery_controller import recovery_blueprint
+from app.users.user_login import login_blueprint
+from app.users.user_register import register_blueprint
+from app.users.user_friends import friends_blueprint
+from app.users.recovery_account import recovery_blueprint
 
 def register_routes(app):
   
@@ -24,13 +25,37 @@ def register_routes(app):
     app.register_blueprint(connection_blueprint, url_prefix='/connection')
 
     # autenticação aqui
-    app.register_blueprint(auth_blueprint, url_prefix='/login')
+    app.register_blueprint(login_blueprint, url_prefix='/login')
 
-    # usuarios
-    app.register_blueprint(user_blueprint, url_prefix='/users')
+    # registrar conta
+    app.register_blueprint(register_blueprint, url_prefix='/register')
+
+    # amigos
+    app.register_blueprint(friends_blueprint, url_prefix='/friends')
 
     # recuperar conta
     app.register_blueprint(recovery_blueprint, url_prefix='/recovery')
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 """
     # ====== Rotas diretas ======

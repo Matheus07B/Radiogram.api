@@ -4,7 +4,7 @@ import random, string
 
 recovery_blueprint = Blueprint('recovery', __name__)
 
-@recovery_blueprint.route('/solicitar', methods=['POST'])
+@recovery_blueprint.route('', methods=['POST'])
 def solicitar_recuperacao():
     email = request.json.get('email')
     codigo = ''.join(random.choices(string.digits, k=6))

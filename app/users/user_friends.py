@@ -3,9 +3,9 @@ from app.models.user_model import get_all_users
 from app.utils.decorators import verificar_token
 from app.models.database import get_db_connection
 
-user_blueprint = Blueprint('users', __name__)
+friends_blueprint = Blueprint('friends', __name__)
 
-@user_blueprint.route('/listar', methods=['GET'])
+@friends_blueprint.route('/list', methods=['GET'])
 # @verificar_token  # Protege este endpoint com verificação de token
 def listar_usuarios():
     conn = get_db_connection()

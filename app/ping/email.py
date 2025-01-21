@@ -5,7 +5,7 @@ from email.mime.multipart import MIMEMultipart
 
 email_blueprint = Blueprint('/email', __name__)
 
-@email_blueprint.route('/', methods=['GET'])
+@email_blueprint.route('', methods=['GET'])
 def enviar_email():
     smtp_server = "smtp.gmail.com"
     smtp_port = 587
