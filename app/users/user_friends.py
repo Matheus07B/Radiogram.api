@@ -6,7 +6,7 @@ from app.models.database import get_db_connection
 friends_blueprint = Blueprint('friends', __name__)
 
 @friends_blueprint.route('/list', methods=['GET'])
-@verificar_token  # Protege este endpoint com verificação de token
+# @verificar_token  # Protege este endpoint com verificação de token
 def listar_usuarios():
     conn = get_db_connection()
     cursor = conn.cursor()
