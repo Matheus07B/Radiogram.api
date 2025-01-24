@@ -27,7 +27,7 @@ def list_friends():
 
     # Formata os resultados para retornar como JSON
     friend = [{"id": friend["id"], "nome": friend["nome"], "email": friend["email"]} for friend in friend]
-    return jsonify(resultado)
+    return jsonify(friend)
 
 @friends_blueprint.route('/add', methods=['GET'])
 # @verificar_token  # Protege este endpoint com verificação de token
