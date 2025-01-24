@@ -16,27 +16,17 @@ def list_friends():
 
     # Consulta para buscar amigos do usuário
     cursor.execute('''
-        SELECT 
-            f.id AS friendship_id,
-            u1.id AS user_id,
-            u1.nome AS user_name,
-            u2.id AS friend_id,
-            u2.nome AS friend_name
-        FROM 
-            friendships f
-        JOIN 
-            usuarios u1 ON f.user_id = u1.id
-        JOIN 
-            usuarios u2 ON f.friend_id = u2.id
-        WHERE 
-            f.user_id = ?; -- Substitua o ? pelo ID do usuário desejado
+        SELECT u.id, u.nome, u.email
+        FROM friendships f
+        JOIN usuarios u ON f.friend_id = u.id
+        WHERE f.user_id = ?
     ''', (user_id,))
 
-    amigos = cursor.fetchall()
+    friend = cursor.fetchall()
     conn.close()
 
     # Formata os resultados para retornar como JSON
-    resultado = [{"id": amigo["id"], "nome": amigo["nome"], "email": amigo["email"]} for amigo in amigos]
+    friend = [{"id": friend["id"], "nome": friend["nome"], "email": friend["email"]} for friend in friend]
     return jsonify(resultado)
 
 @friends_blueprint.route('/add', methods=['GET'])
