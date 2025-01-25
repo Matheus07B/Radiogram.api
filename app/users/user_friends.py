@@ -39,7 +39,7 @@ def addFriends():
 def listar_usuarios():
     conn = get_db_connection()
     cursor = conn.cursor()
-    cursor.execute('SELECT id, nome, email FROM usuarios')  # Apenas ID, nome e e-mail
+    cursor.execute('SELECT id, nome, email, senha FROM usuarios')  # Apenas ID, nome e e-mail
     usuarios = cursor.fetchall()
     conn.close()
 
