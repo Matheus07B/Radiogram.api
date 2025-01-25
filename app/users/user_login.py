@@ -4,10 +4,12 @@ import jwt
 from datetime import datetime, timedelta
 from app.models.user_model import find_user_by_email
 from app.models.database import get_db_connection  # Certifique-se de importar corretamente a função
+from config import Config
 import os
 
 login_blueprint = Blueprint('login', __name__)
-SECRET_KEY = os.environ.get("SECRET_KEY", "minha-chave-secreta")
+# SECRET_KEY = os.environ.get("SECRET_KEY", "minha-chave-secreta")
+SECRET_KEY = Config.SECRET_KEY 
 
 @login_blueprint.route('', methods=['POST'])
 def login():

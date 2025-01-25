@@ -3,6 +3,7 @@ from app.models.user_model import get_all_users
 from app.utils.decorators import verificar_token
 from app.models.database import get_db_connection
 from config import Config
+import jwt
 
 friends_blueprint = Blueprint('friends', __name__)
 
@@ -13,8 +14,12 @@ def list_friends():
     if not auth_header:
         return jsonify({"error": "Token de autorização é obrigatório"}), 401
 
+    # Verificar se o cabeçalho está no formato esperado "Bearer <token>"
+    if not auth_header.startswith("Bearer "):
+        return jsonify({"error": "Formato de token inválido"}), 401
+
     try:
-        # Extrair o token Bearer
+        # Extrair o token
         token = auth_header.split(" ")[1]
         # Decodificar o token JWT usando a SECRET_KEY da configuração
         payload = jwt.decode(token, Config.SECRET_KEY, algorithms=["HS256"])
@@ -30,19 +35,17 @@ def list_friends():
     conn = get_db_connection()
     cursor = conn.cursor()
 
-    cursor.execute('''
-        SELECT u.id, u.nome, u.email
-        FROM friendships f
-        JOIN usuarios u ON f.friend_id = u.id
-        WHERE f.user_id = ?
-    ''', (user_id,))
-
+    cursor.execute('''SELECT u.id, u.nome, u.email
+                      FROM friendships f
+                      JOIN usuarios u ON f.friend_id = u.id
+                      WHERE f.user_id = ?''', (user_id,))
     friends = cursor.fetchall()
     conn.close()
 
-    # Formata os resultados para retornar como JSON
+    # Formatar os resultados para retornar como JSON
     friends = [{"id": friend["id"], "nome": friend["nome"], "email": friend["email"]} for friend in friends]
     return jsonify(friends), 200
+
 
 @friends_blueprint.route('/add', methods=['GET'])
 # @verificar_token  # Protege este endpoint com verificação de token
