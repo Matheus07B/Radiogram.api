@@ -2,19 +2,34 @@ from flask import Blueprint, jsonify, request
 from app.models.user_model import get_all_users
 from app.utils.decorators import verificar_token
 from app.models.database import get_db_connection
+from config import Config
 
 friends_blueprint = Blueprint('friends', __name__)
 
 @friends_blueprint.route('/list', methods=['GET'])
 def list_friends():
-    user_id = request.args.get('user_id')  # Obtém o ID do usuário da query string
-    if not user_id:
-        return jsonify({"error": "O parâmetro 'user_id' é obrigatório"}), 400
+    # Obter o token do cabeçalho Authorization
+    auth_header = request.headers.get('Authorization')
+    if not auth_header:
+        return jsonify({"error": "Token de autorização é obrigatório"}), 401
 
+    try:
+        # Extrair o token Bearer
+        token = auth_header.split(" ")[1]
+        # Decodificar o token JWT usando a SECRET_KEY da configuração
+        payload = jwt.decode(token, Config.SECRET_KEY, algorithms=["HS256"])
+        user_id = payload.get("user_id")  # Obter o user_id do payload
+        if not user_id:
+            return jsonify({"error": "Token inválido: user_id não encontrado"}), 401
+    except jwt.ExpiredSignatureError:
+        return jsonify({"error": "Token expirou"}), 401
+    except jwt.InvalidTokenError:
+        return jsonify({"error": "Token inválido"}), 401
+
+    # Consulta ao banco de dados
     conn = get_db_connection()
     cursor = conn.cursor()
 
-    # Consulta para buscar amigos do usuário
     cursor.execute('''
         SELECT u.id, u.nome, u.email
         FROM friendships f
@@ -22,12 +37,12 @@ def list_friends():
         WHERE f.user_id = ?
     ''', (user_id,))
 
-    friend = cursor.fetchall()
+    friends = cursor.fetchall()
     conn.close()
 
     # Formata os resultados para retornar como JSON
-    friend = [{"id": friend["id"], "nome": friend["nome"], "email": friend["email"]} for friend in friend]
-    return jsonify(friend)
+    friends = [{"id": friend["id"], "nome": friend["nome"], "email": friend["email"]} for friend in friends]
+    return jsonify(friends), 200
 
 @friends_blueprint.route('/add', methods=['GET'])
 # @verificar_token  # Protege este endpoint com verificação de token
