@@ -1,8 +1,10 @@
 import os
 from dotenv import load_dotenv
 
-load_dotenv()  # Carrega as variáveis de ambiente do arquivo .env
+load_dotenv()  # Carrega o arquivo .env
 
 class Config:
-    DATABASE = os.path.join(os.getcwd(), 'database', 'database.db')  # Caminho para o banco de dados
-    SECRET_KEY = os.getenv('SECRET_KEY')  # Lê a chave secreta do .env
+    DATABASE = os.path.join(os.getcwd(), 'database', 'database.db')
+    SECRET_KEY = os.getenv('SECRET_KEY', 'chave_padrao').strip()
+
+print(f"SECRET_KEY carregada: {repr(Config.SECRET_KEY)}")
