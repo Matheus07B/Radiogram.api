@@ -15,3 +15,5 @@ curl -X GET "http://127.0.0.1:5000/friends/list" -H "Authorization: Bearer eyJhb
 curl -X GET "http://127.0.0.1:5000/friends/list" -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX2lkIjoyLCJlbWFpbCI6IjJAZ21haWwuY29tIiwiZXhwIjoxNzY5MzI2ODc4fQ.SsgJSsJKuAE7Ysvv9WtrjuAD_NZ4kXasn5unhwm3QBM"
 
 curl -X GET "http://seu-servidor.com/list/select?friend_id=2" \ -H "Authorization: Bearer SEU_TOKEN_AQUI"
+
+curl -X GET "http://127.0.0.1:5000/friends/list/selected?friend_id=2" \ -H "Authorization: Bearer SEU_TOKEN_AQUI"

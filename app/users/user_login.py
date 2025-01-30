@@ -37,6 +37,10 @@ def login():
     else:
         return jsonify({"erro": "Credenciais inválidas"}), 401
 
+# if __name__ == '__main__':
+#     print(f"SECRET_KEY: {repr(Config.SECRET_KEY)}")  # Mostra o valor e tipo da chave
+
+
 
 # from flask import Blueprint, request, jsonify
 # from app.services.jwt_service import generate_token
