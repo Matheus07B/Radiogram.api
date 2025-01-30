@@ -1,0 +1,17 @@
+1 - 0
+
+-- Inserir amizade
+INSERT INTO friendships (user_id, friend_id) VALUES (2, 1);  -- João é amigo de Maria
+sqlite> SELECT * FROM friendships WHERE user_id = 2
+
+curl -X POST `http://127.0.0.1:5000/login ` -H "Content-Type: application/json" ` -d "{\"email\": \"2@gmail.com\", \"senha\": \"1\"}"
+
+curl -X POST "http://127.0.0.1:5000/login" -H "Content-Type: application/json" -d "{\"email\": \"2@gmail.com\", \"senha\": \"1\"}"
+{"mensagem":"Login realizado com sucesso!","token":"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX2lkIjoyLCJlbWFpbCI6IjJAZ21haWwuY29tIiwiZXhwIjoxNzY5MzI2ODc4fQ.SsgJSsJKuAE7Ysvv9WtrjuAD_NZ4kXasn5unhwm3QBM"}
+
+curl -X GET "http://127.0.0.1:5000/friends/list" -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX2lkIjoyLCJlbWFpbCI6IjJAZ21haWwuY29tIiwiZXhwIjoxNzY5MzI2ODc4fQ.SsgJSsJKuAE7Ysvv9WtrjuAD_NZ4kXasn5unhwm3QBM"
+[{"email":"matheusveneski654@gmail.com","id":1,"nome":"Matheus"}]
+
+curl -X GET "http://127.0.0.1:5000/friends/list" -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX2lkIjoyLCJlbWFpbCI6IjJAZ21haWwuY29tIiwiZXhwIjoxNzY5MzI2ODc4fQ.SsgJSsJKuAE7Ysvv9WtrjuAD_NZ4kXasn5unhwm3QBM"
+
+curl -X GET "http://seu-servidor.com/list/select?friend_id=2" \ -H "Authorization: Bearer SEU_TOKEN_AQUI"

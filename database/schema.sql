@@ -14,3 +14,14 @@ CREATE TABLE IF NOT EXISTS friendships (
     FOREIGN KEY (user_id) REFERENCES usuarios (id),
     FOREIGN KEY (friend_id) REFERENCES usuarios (id)
 );
+
+CREATE TABLE IF NOT EXISTS friendMessages (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    sender_id INTEGER NOT NULL,                           -- ID do usuário que enviou a mensagem
+    receiver_id INTEGER NOT NULL,                         -- ID do usuário que recebeu a mensagem
+    message TEXT NOT NULL,                                -- Conteúdo da mensagem
+    timestamp DATETIME DEFAULT CURRENT_TIMESTAMP,         -- Data e hora do envio
+    room TEXT NOT NULL,                                   -- Sala de chat (opcional para identificar grupos/privados)
+    FOREIGN KEY (sender_id) REFERENCES usuarios (id),
+    FOREIGN KEY (receiver_id) REFERENCES usuarios (id)
+);
