@@ -3,3 +3,4 @@ bcrypt
 gunicorn
 flask-cors
 PyJWT
+dotenv
