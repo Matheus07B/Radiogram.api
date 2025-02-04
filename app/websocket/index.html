@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Chat com WebSocket</title>
+  <script src="https://cdn.socket.io/4.5.1/socket.io.min.js"></script>
+  <style>
+    #messages {
+      border: 1px solid #ccc;
+      padding: 10px;
+      height: 300px;
+      overflow-y: scroll;
+    }
+
+    .message {
+      margin: 5px;
+      padding: 10px;
+      border-radius: 10px;
+      max-width: 60%;
+      word-wrap: break-word;
+    }
+
+    .sent {
+        text-align: right;
+        background-color: #cce5ff;
+        color: #004085;
+        padding: 8px;
+        margin: 5px;
+        border-radius: 10px;
+        text-align: right;
+        align-self: flex-end;
+        max-width: 70%;
+        word-wrap: break-word; /* Alternativa para compatibilidade */
+        overflow-wrap: break-word; /* Recomendado */
+    }
+
+    .received {
+        text-align: left;
+        background-color: #f8d7da;
+        color: #721c24;
+        padding: 8px;
+        margin: 5px;
+        border-radius: 10px;
+        text-align: left;
+        align-self: flex-start;
+        max-width: 70%;
+        word-wrap: break-word; /* Alternativa para compatibilidade */
+        overflow-wrap: break-word; /* Recomendado */
+    }
+
+    .messages-container {
+      display: flex;
+      flex-direction: column;
+    }
+  </style>
+</head>
+<body>
+  <h1>Chat em Tempo Real</h1>
+
+  <!-- Área para exibir mensagens -->
+  <div id="messages" class="messages-container"></div>
+
+  <!-- Campo para digitar mensagens -->
+  <input type="text" id="messageInput" placeholder="Digite sua mensagem..." style="width: 80%;" />
+  <button id="sendButton">Enviar</button>
+
+  <script>
+    // Conectar ao servidor WebSocket
+    const socket = io('http://127.0.0.1:5001', {
+      transports: ['websocket']
+    });
+
+    // Manipular mensagens recebidas
+    socket.on('message', (data) => {
+    const messagesDiv = document.getElementById('messages');
+    const messageElement = document.createElement('div');
+
+    // Verifique se a mensagem não é do remetente
+    if (data.sender !== socket.id) { 
+        messageElement.textContent = data.message; // Exibe a mensagem recebida
+        messageElement.className = 'received'; // Adiciona a classe para alinhar à esquerda
+    }
+
+    messagesDiv.appendChild(messageElement);
+    messagesDiv.scrollTop = messagesDiv.scrollHeight; // Rolagem automática
+    });
+
+    // Enviar mensagem ao clicar no botão
+    document.getElementById('sendButton').addEventListener('click', () => {
+    const messageInput = document.getElementById('messageInput');
+    const message = messageInput.value;
+
+    if (message.trim() !== '') {
+        // Envia mensagem com identificação
+        socket.emit('message', { sender: socket.id, message });
+
+        // Exibe localmente a mensagem enviada
+        const messagesDiv = document.getElementById('messages');
+        const messageElement = document.createElement('div');
+        messageElement.textContent = message;
+        messageElement.className = 'sent'; // Adiciona a classe para alinhar à direita
+        messagesDiv.appendChild(messageElement);
+        messagesDiv.scrollTop = messagesDiv.scrollHeight; // Rolagem automática
+
+        messageInput.value = ''; // Limpa o campo
+    }
+    });
+
+
+    // Enviar mensagem ao pressionar Enter
+    document.getElementById('messageInput').addEventListener('keydown', (event) => {
+      if (event.key === 'Enter') {
+        document.getElementById('sendButton').click(); // Simula o clique no botão
+      }
+    });
+  </script>
+</body>
+</html>

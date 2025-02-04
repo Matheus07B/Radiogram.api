@@ -14,6 +14,9 @@ from app.users.user_register import register_blueprint
 from app.users.user_friends import friends_blueprint
 from app.users.recovery_account import recovery_blueprint
 
+# websockets
+from app.websocket.web_chat import web_chat_blueprint
+
 def register_routes(app):
   
     # rota main aqui
