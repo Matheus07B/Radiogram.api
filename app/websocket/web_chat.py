@@ -48,7 +48,7 @@ def handle_leave(data):
     emit('message', f"Saiu da sala: {room}", room=room)
 
 if __name__ == '__main__':
-    socketio.run(app, debug=True, host="127.0.0.1", port=5001)
+    socketio.run(app, debug=True, host="0.0.0.0", port=5001)
 
 
 #############################################################################################
