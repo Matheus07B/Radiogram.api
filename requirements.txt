@@ -4,3 +4,4 @@ gunicorn
 flask-cors
 PyJWT
 python-dotenv
+flask_socketio
