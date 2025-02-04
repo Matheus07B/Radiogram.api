@@ -14,7 +14,7 @@ CORS(app)  # Permitir origens diferentes (se necessário)
 socketio = SocketIO(app, cors_allowed_origins="*")  # "*" permite todas as origens
 
 # Rota principal para o site
-@web_chat_blueprint.route('/')
+@web_chat_blueprint.route('')
 def index():
     return "Servidor WebSocket em execução"
 
