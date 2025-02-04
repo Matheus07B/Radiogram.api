@@ -5,6 +5,12 @@ socketio = SocketIO(cors_allowed_origins="*")  # Criar a instância do SocketIO
 
 web_chat_blueprint = Blueprint('web_chat', __name__)
 
+@web_chat_blueprint.route('', methods=['POST'])  # Definir uma rota HTTP
+def chat():
+    data = request.json  # Obter os dados da requisição
+    message = data.get('message', 'Mensagem vazia')
+    return jsonify({"response": f"Mensagem recebida: {message}"}), 200
+
 def configure_websocket(app):
     """Configurar WebSocket dentro da API Flask"""
     socketio.init_app(app)
@@ -35,6 +41,7 @@ def configure_websocket(app):
         emit('message', f"Saiu da sala: {room}", room=room)
 
     return socketio  # Retornar o socketio configurado
+
 
 ################################################################
 
