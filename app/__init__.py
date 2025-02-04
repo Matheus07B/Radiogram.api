@@ -19,7 +19,7 @@ def create_app():
     register_routes(app)
 
     # Configura o WebSocket dentro da API
-    socketio = configure_websocket(app)
+    socketio = web_chat(app)
 
     return app, socketio  # Retorna o WebSocket junto com a app
 
