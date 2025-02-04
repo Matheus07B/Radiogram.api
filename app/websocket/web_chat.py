@@ -19,7 +19,7 @@ def index():
     return "Servidor WebSocket em execução"
 
 # Evento de conexão
-@socketio.on('connect')
+@socketio.on('connect', namespace='/web_chat')
 def handle_connect():
     print("Cliente conectado")
 
