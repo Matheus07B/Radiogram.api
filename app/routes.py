@@ -18,7 +18,6 @@ from app.users.recovery_account import recovery_blueprint
 from app.websocket.web_chat import web_chat_blueprint
 
 def register_routes(app):
-  
     # rota main aqui
     # app.register_blueprint(main_blueprint, url_prefix='/')
 
