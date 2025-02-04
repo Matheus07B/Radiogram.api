@@ -1,4 +1,4 @@
-from flask import Blueprint, request, jsonify
+from flask import Flask, Blueprint, request, jsonify
 from flask_socketio import SocketIO, send, emit, join_room, leave_room
 from flask_cors import CORS
 
