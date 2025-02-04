@@ -2,7 +2,7 @@ from flask import Flask
 from flask_cors import CORS
 from app.models.database import init_db
 from app.routes import register_routes
-from app.websocket.socket_server import configure_websocket  # Importa o WebSocket
+from app.websocket.web_chat import configure_websocket  # Importa o WebSocket
 
 def create_app():
     app = Flask(__name__)
@@ -19,7 +19,7 @@ def create_app():
     register_routes(app)
 
     # Configura o WebSocket dentro da API
-    socketio = web_chat(app)
+    socketio = configure_websocket(app)
 
     return app, socketio  # Retorna o WebSocket junto com a app
 
