@@ -15,7 +15,7 @@ from app.users.user_friends import friends_blueprint
 from app.users.recovery_account import recovery_blueprint
 
 # websockets
-from app.websocket.web_chat import web_chat_blueprint
+# from app.websocket.web_chat import web_chat_blueprint
 
 def register_routes(app):
     # rota main aqui
@@ -38,7 +38,7 @@ def register_routes(app):
     # recuperar conta
     app.register_blueprint(recovery_blueprint, url_prefix='/recovery')
 
-    app.register_blueprint(web_chat_blueprint, url_prefix='/web_chat')
+    # app.register_blueprint(web_chat_blueprint, url_prefix='/web_chat')
 
 
 

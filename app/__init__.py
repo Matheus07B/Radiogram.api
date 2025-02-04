@@ -1,7 +1,7 @@
 from flask import Flask
-from flask_cors import CORS
-from app.models.database import init_db
-from app.routes import register_routes
+from flask_cors import CORS 
+from app.models.database import init_db # Importa o banco de dados
+from app.routes import register_routes # Importa as rotas
 from app.websocket.web_chat import configure_websocket  # Importa o WebSocket
 
 def create_app():
@@ -22,6 +22,9 @@ def create_app():
     socketio = configure_websocket(app)
 
     return app, socketio  # Retorna o WebSocket junto com a app
+
+if __name__ == '__main__':
+    socketio.run(app, debug=True, host="0.0.0.0", port=5001)
 
 ##############################################################################
 
