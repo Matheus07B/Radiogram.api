@@ -38,7 +38,7 @@ def register_routes(app):
     # recuperar conta
     app.register_blueprint(recovery_blueprint, url_prefix='/recovery')
 
-    # app.register_blueprint(web_chat_blueprint, url_prefix='/web_chat')
+    app.register_blueprint(web_chat_blueprint, url_prefix='/web_chat')
 
 
 

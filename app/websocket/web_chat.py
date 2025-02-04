@@ -1,11 +1,9 @@
 from flask import Flask, Blueprint, request, jsonify
 from flask_socketio import SocketIO, send, emit, join_room, leave_room
-import os
 
 socketio = SocketIO(cors_allowed_origins="*")  # Criar a instância do SocketIO
 
-# web_chat_blueprint = Blueprint('web_chat', __name__)
-# @web_chat_blueprint.route('')
+web_chat_blueprint = Blueprint('web_chat', __name__)
 
 def configure_websocket(app):
     """Configurar WebSocket dentro da API Flask"""
@@ -36,8 +34,7 @@ def configure_websocket(app):
         leave_room(room)
         emit('message', f"Saiu da sala: {room}", room=room)
 
-    return socketio
-
+    return socketio  # Retornar o socketio configurado
 
 ################################################################
 
