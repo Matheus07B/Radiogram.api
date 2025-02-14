@@ -1,8 +1,8 @@
-from flask import Flask, request
-from flask_socketio import SocketIO, join_room, leave_room
+from flask import Flask, request, Blueprint
+from flask_socketio import send, emit, join_room, leave_room
+from app.websocket import socketio  # Importa a instância global do SocketIO
 
-app = Flask(__name__)
-socketio = SocketIO(app, cors_allowed_origins="*")
+chat_blueprint = Blueprint('chat', __name__)  # Definição do Blueprint
 
 users_rooms = {}  # Mapeia SID do usuário para sua sala atual
 
@@ -12,13 +12,11 @@ def handle_join(data):
     new_room = data['room']
     sid = request.sid
 
-    # Se o usuário já estava em uma sala, remove antes de entrar na nova
     if sid in users_rooms:
         old_room = users_rooms[sid]
         leave_room(old_room)
         print(f"Usuário {username} saiu da sala {old_room}")
 
-    # Atualiza a sala do usuário e entra na nova
     users_rooms[sid] = new_room
     join_room(new_room)
     print(f"Usuário {username} entrou na sala {new_room}")
@@ -38,13 +36,17 @@ def handle_message(data):
     room = data['room']
     message = data['message']
 
-    # Garante que a mensagem é enviada apenas para a sala correta
     print(f"Mensagem na sala {room}: {message}")
     socketio.emit('message', {'room': room, 'message': message, 'sender': request.sid}, room=room)
 
-if __name__ == "__main__":
-    socketio.run(app, host="127.0.0.1", port=5001, debug=True)
-    # return socketio  # Retornar o socketio configurado
+
+# Criar a aplicação e rodar o WebSocket
+# if __name__ == "__main__":
+#     app, socketio = create_app()
+#     socketio.run(app, host="127.0.0.1", port=5001, debug=True)
+
+
+
 ################################################################
 
 # from flask import Flask, Blueprint, request, jsonify
