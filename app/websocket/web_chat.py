@@ -1,43 +1,50 @@
-from flask import Flask, Blueprint, request, jsonify
-from flask_socketio import SocketIO, send, emit, join_room, leave_room
+from flask import Flask, request
+from flask_socketio import SocketIO, join_room, leave_room
 
-socketio = SocketIO(cors_allowed_origins="*")  # Criar a instância do SocketIO
+app = Flask(__name__)
+socketio = SocketIO(app, cors_allowed_origins="*")
 
-web_chat_blueprint = Blueprint('web_chat', __name__)
+users_rooms = {}  # Mapeia SID do usuário para sua sala atual
 
-@web_chat_blueprint.route('', methods=['POST'])  # Definir uma rota HTTP
-def configure_websocket(app):
-    """Configurar WebSocket dentro da API Flask"""
-    socketio.init_app(app)
+@socketio.on('join')
+def handle_join(data):
+    username = data['username']
+    new_room = data['room']
+    sid = request.sid
 
-    @socketio.on('connect')
-    def handle_connect():
-        print("Cliente conectado")
+    # Se o usuário já estava em uma sala, remove antes de entrar na nova
+    if sid in users_rooms:
+        old_room = users_rooms[sid]
+        leave_room(old_room)
+        print(f"Usuário {username} saiu da sala {old_room}")
 
-    @socketio.on('disconnect')
-    def handle_disconnect():
-        print("Cliente desconectado")
+    # Atualiza a sala do usuário e entra na nova
+    users_rooms[sid] = new_room
+    join_room(new_room)
+    print(f"Usuário {username} entrou na sala {new_room}")
 
-    @socketio.on('message')
-    def handle_message(data):
-        print(f"Mensagem recebida: {data}")
-        send(data, broadcast=True)
+@socketio.on('leave')
+def handle_leave(data):
+    sid = request.sid
+    room = data.get('room')
 
-    @socketio.on('join')
-    def handle_join(data):
-        room = data['room']
-        join_room(room)
-        emit('message', f"Entrou na sala: {room}", room=room)
-
-    @socketio.on('leave')
-    def handle_leave(data):
-        room = data['room']
+    if sid in users_rooms and users_rooms[sid] == room:
         leave_room(room)
-        emit('message', f"Saiu da sala: {room}", room=room)
+        del users_rooms[sid]
+        print(f"Usuário {sid} saiu manualmente da sala {room}")
 
-    return socketio  # Retornar o socketio configurado
+@socketio.on('message')
+def handle_message(data):
+    room = data['room']
+    message = data['message']
 
+    # Garante que a mensagem é enviada apenas para a sala correta
+    print(f"Mensagem na sala {room}: {message}")
+    socketio.emit('message', {'room': room, 'message': message, 'sender': request.sid}, room=room)
 
+if __name__ == "__main__":
+    socketio.run(app, host="127.0.0.1", port=5001, debug=True)
+    # return socketio  # Retornar o socketio configurado
 ################################################################
 
 # from flask import Flask, Blueprint, request, jsonify
