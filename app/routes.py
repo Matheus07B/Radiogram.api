@@ -1,6 +1,5 @@
 # Importa a função diretamente do modulo de usuarios
 # from app.models.user_model import get_all_users
-
 from flask import jsonify
 
 # connection routes
@@ -38,6 +37,7 @@ def register_routes(app):
     # recuperar conta
     app.register_blueprint(recovery_blueprint, url_prefix='/recovery')
 
+    # Criação do websocket
     app.register_blueprint(chat_blueprint, url_prefix='/chat')
 
 
