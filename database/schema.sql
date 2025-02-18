@@ -2,7 +2,8 @@ CREATE TABLE IF NOT EXISTS usuarios (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     nome TEXT NOT NULL,
     email TEXT NOT NULL UNIQUE,
-    senha TEXT NOT NULL
+    senha TEXT NOT NULL,
+    bio TEXT
 );
 
 CREATE TABLE IF NOT EXISTS friendships (
@@ -24,4 +25,8 @@ CREATE TABLE IF NOT EXISTS friendMessages (
     room TEXT NOT NULL,                                   -- Sala de chat (opcional para identificar grupos/privados)
     FOREIGN KEY (sender_id) REFERENCES usuarios (id),
     FOREIGN KEY (receiver_id) REFERENCES usuarios (id)
+);
+
+CREATE TABLE IF NOT EXISTS rooms (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
 );

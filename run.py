@@ -1,3 +1,8 @@
+# # remover caso necessario
+from gevent import monkey
+monkey.patch_all()
+# from flask import Flask  # Agora você pode importar outras libs
+
 from app import create_app
 from app.websocket import socketio  # Importa socketio corretamente
 
