@@ -115,39 +115,66 @@ def select_friend_chat():
     return jsonify({"messages": messages_data}), 200
 
 # Remover aqui caso necessario.
-db = SQLAlchemy()
-
-class Message(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    sender_id = db.Column(db.Integer, nullable=False)
-    receiver_id = db.Column(db.Integer, nullable=False)
-    message = db.Column(db.Text, nullable=False)
-    timestamp = db.Column(db.DateTime, nullable=False, default=db.func.current_timestamp())
-
 @friends_blueprint.route('/list/last', methods=['GET'])
-# @jwt_required()
 def get_last_message():
-    user_id = get_jwt_identity()  # Obtém o ID do usuário autenticado
-    friend_id = request.args.get('friend_id')
+    # Obter o token do cabeçalho Authorization
+    auth_header = request.headers.get('Authorization')
+    if not auth_header:
+        return jsonify({"error": "Token de autorização é obrigatório"}), 401
 
+    # Verificar se o cabeçalho está no formato esperado "Bearer <token>"
+    if not auth_header.startswith("Bearer "):
+        return jsonify({"error": "Formato de token inválido"}), 401
+
+    try:
+        # Extrair o token
+        token = auth_header.split(" ")[1]
+        # Decodificar o token JWT usando a SECRET_KEY da configuração
+        payload = jwt.decode(token, Config.SECRET_KEY, algorithms=["HS256"])
+        user_id = payload.get("user_id")  # Obter o user_id do payload
+        if not user_id:
+            return jsonify({"error": "Token inválido: user_id não encontrado"}), 401
+    except jwt.ExpiredSignatureError:
+        return jsonify({"error": "Token expirou"}), 401
+    except jwt.InvalidTokenError:
+        return jsonify({"error": "Token inválido"}), 401
+
+    # Obter o ID do amigo a partir dos parâmetros da requisição
+    friend_id = request.args.get('friend_id')  # O friend_id será passado como parâmetro na URL
     if not friend_id:
         return jsonify({"error": "friend_id é obrigatório"}), 400
 
-    # Busca a última mensagem entre user_id e friend_id
-    last_message = (
-        Message.query
-        .filter(
-            ((Message.sender_id == user_id) & (Message.receiver_id == friend_id)) |
-            ((Message.sender_id == friend_id) & (Message.receiver_id == user_id))
-        )
-        .order_by(Message.timestamp.desc())  # Ordena pela data, pegando a mais recente
-        .first()
-    )
+    # Consultar a última mensagem entre o usuário autenticado e o amigo
+    conn = get_db_connection()
+    cursor = conn.cursor()
 
+    cursor.execute(
+        '''
+        SELECT m.id, m.message, m.timestamp, m.sender_id, m.receiver_id, m.room
+        FROM friendMessages m
+        WHERE (m.sender_id = ? AND m.receiver_id = ?)
+           OR (m.sender_id = ? AND m.receiver_id = ?)
+        ORDER BY m.timestamp DESC
+        LIMIT 1
+        ''', (user_id, friend_id, friend_id, user_id)
+    )
+    last_message = cursor.fetchone()
+    conn.close()
+
+    # Verificar se existe uma mensagem
     if last_message:
-        return jsonify({"lastMessage": last_message.message})
+        message_data = {
+            "id": last_message["id"],
+            "message": last_message["message"],
+            "timestamp": last_message["timestamp"],
+            "sender_id": last_message["sender_id"],
+            "receiver_id": last_message["receiver_id"],
+            "room": last_message["room"]
+        }
+        return jsonify({"lastMessage": message_data}), 200
     else:
-        return jsonify({"lastMessage": "Nenhuma mensagem encontrada"})
+        return jsonify({"lastMessage": "Nenhuma mensagem encontrada"}), 404
+
 # Remover aqui caso necessario.
 
 @friends_blueprint.route('/add', methods=['GET'])
