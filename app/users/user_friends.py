@@ -3,6 +3,10 @@ from app.models.user_model import get_all_users
 from app.utils.decorators import verificar_token
 from app.models.database import get_db_connection
 from config import Config
+
+from flask_sqlalchemy import SQLAlchemy
+from flask_jwt_extended import jwt_required, get_jwt_identity
+
 import jwt
 
 friends_blueprint = Blueprint('friends', __name__)
@@ -110,6 +114,41 @@ def select_friend_chat():
     
     return jsonify({"messages": messages_data}), 200
 
+# Remover aqui caso necessario.
+db = SQLAlchemy()
+
+class Message(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    sender_id = db.Column(db.Integer, nullable=False)
+    receiver_id = db.Column(db.Integer, nullable=False)
+    message = db.Column(db.Text, nullable=False)
+    timestamp = db.Column(db.DateTime, nullable=False, default=db.func.current_timestamp())
+
+@friends_blueprint.route('/list/last', methods=['GET'])
+# @jwt_required()
+def get_last_message():
+    user_id = get_jwt_identity()  # Obtém o ID do usuário autenticado
+    friend_id = request.args.get('friend_id')
+
+    if not friend_id:
+        return jsonify({"error": "friend_id é obrigatório"}), 400
+
+    # Busca a última mensagem entre user_id e friend_id
+    last_message = (
+        Message.query
+        .filter(
+            ((Message.sender_id == user_id) & (Message.receiver_id == friend_id)) |
+            ((Message.sender_id == friend_id) & (Message.receiver_id == user_id))
+        )
+        .order_by(Message.timestamp.desc())  # Ordena pela data, pegando a mais recente
+        .first()
+    )
+
+    if last_message:
+        return jsonify({"lastMessage": last_message.message})
+    else:
+        return jsonify({"lastMessage": "Nenhuma mensagem encontrada"})
+# Remover aqui caso necessario.
 
 @friends_blueprint.route('/add', methods=['GET'])
 # @verificar_token  # Protege este endpoint com verificação de token
