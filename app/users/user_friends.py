@@ -150,7 +150,7 @@ def get_last_message():
 
     cursor.execute(
         '''
-        SELECT m.id, m.message, m.timestamp, m.sender_id, m.receiver_id, m.room
+        SELECT m.message
         FROM friendMessages m
         WHERE (m.sender_id = ? AND m.receiver_id = ?)
            OR (m.sender_id = ? AND m.receiver_id = ?)
@@ -163,17 +163,10 @@ def get_last_message():
 
     # Verificar se existe uma mensagem
     if last_message:
-        message_data = {
-            "id": last_message["id"],
-            "message": last_message["message"],
-            "timestamp": last_message["timestamp"],
-            "sender_id": last_message["sender_id"],
-            "receiver_id": last_message["receiver_id"],
-            "room": last_message["room"]
-        }
-        return jsonify({"lastMessage": message_data}), 200
+        return jsonify({"lastMessage": last_message["message"]}), 200
     else:
         return jsonify({"lastMessage": "Nenhuma mensagem encontrada"}), 404
+
 
 # Remover aqui caso necessario.
 
