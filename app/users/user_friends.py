@@ -186,4 +186,3 @@ def listar_usuarios():
 
     resultado = [{"id": usuario["id"], "nome": usuario["nome"], "email": usuario["email"]} for usuario in usuarios]
     return jsonify(resultado)
-
