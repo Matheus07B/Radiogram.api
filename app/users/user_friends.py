@@ -148,14 +148,16 @@ def get_last_message():
     conn = get_db_connection()
     cursor = conn.cursor()
 
-    cursor.execute("""
-        SELECT r.room_code 
-        FROM rooms r
-        WHERE (r.user1_id = ? AND r.user2_id = ?) 
-        OR (r.user1_id = ? AND r.user2_id = ?)
-    """, (user_id, friend_id, friend_id, user_id)
+    cursor.execute(
+        '''
+        SELECT m.message
+        FROM friendMessages m
+        WHERE (m.sender_id = ? AND m.receiver_id = ?)
+           OR (m.sender_id = ? AND m.receiver_id = ?)
+        ORDER BY m.timestamp DESC
+        LIMIT 1
+        ''', (user_id, friend_id, friend_id, user_id)
     )
-
     last_message = cursor.fetchone()
     conn.close()
 
@@ -200,14 +202,12 @@ def get_room():
     cursor = conn.cursor()
 
     cursor.execute(
-        '''
-        SELECT r.room_code
-        FROM rooms r
-        JOIN friendships f ON (f.user_id = r.user1_id AND f.friend_id = r.user2_id)
-                              OR (f.user_id = r.user2_id AND f.friend_id = r.user1_id)
-        WHERE (r.user1_id = ? AND r.user2_id = ?)
-           OR (r.user1_id = ? AND r.user2_id = ?)
-        ''', (user_id, friend_id, friend_id, user_id)
+        """
+            SELECT r.room_code 
+            FROM rooms r
+            WHERE (r.user1_id = ? AND r.user2_id = ?) 
+            OR (r.user1_id = ? AND r.user2_id = ?)
+        """, (user_id, friend_id, friend_id, user_id)
     )
     room = cursor.fetchone()
     conn.close()
