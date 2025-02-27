@@ -92,7 +92,7 @@ def select_friend_chat():
         SELECT m.id, m.message, m.timestamp, m.sender_id, m.receiver_id, m.room
         FROM friendMessages m
         WHERE (m.sender_id = ? AND m.receiver_id = ?)
-           OR (m.sender_id = ? AND m.receiver_id = ?)
+        OR (m.sender_id = ? AND m.receiver_id = ?)
         ORDER BY m.timestamp
         ''', (user_id, friend_id, friend_id, user_id)
     )
@@ -153,7 +153,7 @@ def get_last_message():
         SELECT m.message
         FROM friendMessages m
         WHERE (m.sender_id = ? AND m.receiver_id = ?)
-           OR (m.sender_id = ? AND m.receiver_id = ?)
+        OR (m.sender_id = ? AND m.receiver_id = ?)
         ORDER BY m.timestamp DESC
         LIMIT 1
         ''', (user_id, friend_id, friend_id, user_id)
@@ -205,10 +205,10 @@ def get_room():
         '''
         SELECT r.room_code
         FROM rooms r
-        JOIN friendships f ON (f.user_id = r.user1_id AND f.friend_id = r.user2_id)
-                              OR (f.user_id = r.user2_id AND f.friend_id = r.user1_id)
+        JOIN friendships f1 ON (f1.user_id = r.user1_id AND f1.friend_id = r.user2_id)
+        JOIN friendships f2 ON (f2.user_id = r.user2_id AND f2.friend_id = r.user1_id)
         WHERE (r.user1_id = ? AND r.user2_id = ?)
-           OR (r.user1_id = ? AND r.user2_id = ?)
+        OR (r.user1_id = ? AND r.user2_id = ?)
         ''', (user_id, friend_id, friend_id, user_id)
     )
     room = cursor.fetchone()
