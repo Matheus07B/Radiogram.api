@@ -166,9 +166,60 @@ def get_last_message():
         return jsonify({"lastMessage": last_message["message"]}), 200
     else:
         return jsonify({"lastMessage": "Nenhuma mensagem encontrada"}), 404
-
-
 # Remover aqui caso necessario.
+
+@friends_blueprint.route('/get/room', methods=['GET'])
+def get_room():
+    # Obter o token do cabeçalho Authorization
+    auth_header = request.headers.get('Authorization')
+    if not auth_header:
+        return jsonify({"error": "Token de autorização é obrigatório"}), 401
+
+    # Verificar se o cabeçalho está no formato esperado "Bearer <token>"
+    if not auth_header.startswith("Bearer "):
+        return jsonify({"error": "Formato de token inválido"}), 401
+
+    try:
+        # Extrair o token
+        token = auth_header.split(" ")[1]
+        # Decodificar o token JWT usando a SECRET_KEY da configuração
+        payload = jwt.decode(token, Config.SECRET_KEY, algorithms=["HS256"])
+        user_id = payload.get("user_id")  # Obter o user_id do payload
+        if not user_id:
+            return jsonify({"error": "Token inválido: user_id não encontrado"}), 401
+    except jwt.ExpiredSignatureError:
+        return jsonify({"error": "Token expirou"}), 401
+    except jwt.InvalidTokenError:
+        return jsonify({"error": "Token inválido"}), 401
+
+    # Obter o ID do amigo a partir dos parâmetros da requisição
+    friend_id = request.args.get('friend_id')  # O friend_id será passado como parâmetro na URL
+    if not friend_id:
+        return jsonify({"error": "friend_id é obrigatório"}), 400
+
+    # Consultar o código da sala entre o usuário autenticado e o amigo
+    conn = get_db_connection()
+    cursor = conn.cursor()
+
+    cursor.execute(
+        '''
+        SELECT r.room_code
+        FROM rooms r
+        JOIN friendships f ON (f.user_id = r.user1_id AND f.friend_id = r.user2_id)
+                              OR (f.user_id = r.user2_id AND f.friend_id = r.user1_id)
+        WHERE (r.user1_id = ? AND r.user2_id = ?)
+           OR (r.user1_id = ? AND r.user2_id = ?)
+        ''', (user_id, friend_id, friend_id, user_id)
+    )
+    room = cursor.fetchone()
+    conn.close()
+
+    if room:
+        # Retorna o código da sala encontrado
+        return jsonify({"room_code": room["room_code"]}), 200
+    else:
+        # Se a sala não for encontrada, retorna erro 404
+        return jsonify({"error": "Room not found"}), 404
 
 @friends_blueprint.route('/add', methods=['GET'])
 # @verificar_token  # Protege este endpoint com verificação de token

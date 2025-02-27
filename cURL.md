@@ -1,4 +1,4 @@
--- Inserir amizade
+## Inserir amizade
 INSERT INTO friendships (user_id, friend_id) VALUES (2, 1);  -- João é amigo de Maria
 sqlite> SELECT * FROM friendships WHERE user_id = 2
 
@@ -42,3 +42,6 @@ C:\Users\mathe>curl -X POST "http://127.0.0.1:5001/register" -H "Content-Type: a
 }
 
 C:\Users\mathe>
+
+## Inserir mensagem na tabela de mensagens.
+insert into friendMessages (sender_id, receiver_id, message, room) values (1, 2, 'Tudo certo com você?', 'sala1');
