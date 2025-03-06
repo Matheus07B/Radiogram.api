@@ -1,7 +1,7 @@
 import os
 from dotenv import load_dotenv
 
-load_dotenv("/etc/secrets/.env")  # Carrega o arquivo .env
+load_dotenv()  # Carrega o arquivo .env
 
 class Config:
     DATABASE = os.path.join(os.getcwd(), 'database', 'database.db')
