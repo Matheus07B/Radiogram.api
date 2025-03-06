@@ -8,8 +8,8 @@ from config import Config
 import os
 
 login_blueprint = Blueprint('login', __name__)
-# SECRET_KEY = os.environ.get("SECRET_KEY", "minha-chave-secreta")
-SECRET_KEY = Config.SECRET_KEY 
+SECRET_KEY = os.environ.get("SECRET_KEY")
+# SECRET_KEY = Config.SECRET_KEY 
 
 @login_blueprint.route('', methods=['POST'])
 def login():
