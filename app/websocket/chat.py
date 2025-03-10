@@ -47,8 +47,6 @@ def handle_message(data):
         'sender': request.sid
     }, room=room)
 
-
-
 # Criar a aplicação e rodar o WebSocket
 # if __name__ == "__main__":
 #     app, socketio = create_app()
