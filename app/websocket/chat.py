@@ -31,20 +31,27 @@ def handle_leave(data):
         del users_rooms[sid]
         print(f"Usuário {sid} saiu manualmente da sala {room}")
 
+from datetime import datetime
+
 @socketio.on('message')
 def handle_message(data):
     room = data['room']
     message = data['message']
-    time = data.get('time', '00:00')  # Pega o horário ou usa um padrão
+    sender = request.sid  # ID do remetente no socket
+    time = data.get('time')  # Usa o horário enviado pelo cliente, se disponível
+
+    # Se o frontend não enviar o horário, o servidor gera um
+    if not time:
+        time = datetime.now().strftime('%H:%M')
 
     print(f"Mensagem na sala {room} às {time}: {message}")
 
-    # Envia a mensagem de volta para os clientes na sala
+    # Emite a mensagem para todos na sala, incluindo o horário
     socketio.emit('message', {
         'room': room,
         'message': message,
-        'time': time,  # Reenvia o horário
-        'sender': request.sid
+        'sender': sender,
+        'time': time
     }, room=room)
 
 
