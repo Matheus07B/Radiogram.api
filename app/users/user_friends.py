@@ -218,9 +218,7 @@ def get_room():
         # Se a sala não for encontrada, retorna erro 404
         return jsonify({"error": "Room not found"}), 404
 
-# Inserir as mensagens no banco de dados.
 @friends_blueprint.route('/insert', methods=['POST'])
-# @verificar_token  # Protege este endpoint com verificação de token
 def insert_message():
     try:
         # Pega os dados da requisição
@@ -230,12 +228,24 @@ def insert_message():
         receiver_id = data.get('receiver_id')
         message = data.get('message')
 
+        # Verifica se todos os dados necessários foram fornecidos
         if not sender_id or not receiver_id or not message:
             return jsonify({"error": "Faltando informações"}), 400
 
+        # Verifica se os tipos dos dados são válidos
+        if not isinstance(sender_id, int) or not isinstance(receiver_id, int) or not isinstance(message, str):
+            return jsonify({"error": "Tipos de dados inválidos"}), 400
+
         # Conectar ao banco de dados
         conn = get_db_connection()
+        if not conn:
+            return jsonify({"error": "Falha ao conectar ao banco de dados"}), 500
         cursor = conn.cursor()
+
+        # Verificar se a tabela existe
+        cursor.execute(''' SELECT name FROM sqlite_master WHERE type='table' AND name='friendMessages'; ''')
+        if not cursor.fetchone():
+            return jsonify({"error": "Tabela 'friendMessages' não encontrada"}), 500
 
         # Inserir mensagem na tabela
         cursor.execute('''
@@ -245,13 +255,15 @@ def insert_message():
 
         conn.commit()
 
-        # Fechar a conexão
-        conn.close()
-
         return jsonify({"status": "Mensagem inserida com sucesso!"}), 200
 
+    except Error as e:
+        return jsonify({"error": f"Erro no banco de dados: {str(e)}"}), 500
     except Exception as e:
-        return jsonify({"error": str(e)}), 500
+        return jsonify({"error": f"Erro inesperado: {str(e)}"}), 500
+    finally:
+        if conn:
+            conn.close()
 
 @friends_blueprint.route('/add', methods=['GET'])
 # @verificar_token  # Protege este endpoint com verificação de token
