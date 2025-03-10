@@ -35,10 +35,17 @@ def handle_leave(data):
 def handle_message(data):
     room = data['room']
     message = data['message']
+    time = data['time']  # Agora você também tem o horário
 
-    print(f"Mensagem na sala {room}: {message}")
-    socketio.emit('message', {'room': room, 'message': message, 'sender': request.sid}, room=room)
+    print(f"Mensagem na sala {room} às {time}: {message}")  # Exibe a hora junto com a mensagem
 
+    # Envia a mensagem, a sala, o horário e o sender de volta para todos na sala
+    socketio.emit('message', {
+        'room': room,
+        'message': message,
+        'sender': request.sid,
+        'time': time  # Envia também o horário formatado
+    }, room=room)
 
 # Criar a aplicação e rodar o WebSocket
 # if __name__ == "__main__":
