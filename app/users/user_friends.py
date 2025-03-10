@@ -218,6 +218,41 @@ def get_room():
         # Se a sala não for encontrada, retorna erro 404
         return jsonify({"error": "Room not found"}), 404
 
+# Inserir as mensagens no banco de dados.
+@friends_blueprint.route('/insert', methods=['POST'])
+# @verificar_token  # Protege este endpoint com verificação de token
+def insert_message():
+    try:
+        # Pega os dados da requisição
+        data = request.get_json()
+
+        sender_id = data.get('sender_id')
+        receiver_id = data.get('receiver_id')
+        message = data.get('message')
+
+        if not sender_id or not receiver_id or not message:
+            return jsonify({"error": "Faltando informações"}), 400
+
+        # Conectar ao banco de dados
+        conn = get_db_connection()
+        cursor = conn.cursor()
+
+        # Inserir mensagem na tabela
+        cursor.execute('''
+            INSERT INTO friendMessages (sender_id, receiver_id, message)
+            VALUES (?, ?, ?)
+        ''', (sender_id, receiver_id, message))
+
+        conn.commit()
+
+        # Fechar a conexão
+        conn.close()
+
+        return jsonify({"status": "Mensagem inserida com sucesso!"}), 200
+
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
 @friends_blueprint.route('/add', methods=['GET'])
 # @verificar_token  # Protege este endpoint com verificação de token
 def addFriends():
