@@ -1,24 +1,13 @@
-import sqlite3
 from flask import Flask, request, Blueprint
 from flask_socketio import send, emit, join_room, leave_room
 from app.websocket import socketio  # Importa a instância global do SocketIO
 
-from io import BytesIO
-import base64
-
 chat_blueprint = Blueprint('chat', __name__)  # Definição do Blueprint
-
-# Função para conectar ao banco de dados
-def get_db():
-    conn = sqlite3.connect('chat.db')  # Conecte-se ao banco de dados
-    conn.row_factory = sqlite3.Row  # Para retornar dicionários
-    return conn
 
 users_rooms = {}  # Mapeia SID do usuário para sua sala atual
 
 @socketio.on('join')
 def handle_join(data):
-    """Gerencia a entrada do usuário em uma sala."""
     username = data['username']
     new_room = data['room']
     sid = request.sid
@@ -34,7 +23,6 @@ def handle_join(data):
 
 @socketio.on('leave')
 def handle_leave(data):
-    """Gerencia a saída do usuário de uma sala."""
     sid = request.sid
     room = data.get('room')
 
@@ -47,39 +35,12 @@ def handle_leave(data):
 def handle_message(data):
     room = data['room']
     message = data['message']
-    image = data.get('image', None)  # Agora usando .get() para evitar KeyError
+    image = request.files.get("image", None)  # Obtém a imagem enviada (se houver)
     time = data.get('time', '00:00')  # Pega o horário ou usa um padrão
 
-    # Inicializa a URL da imagem como None
-    image_url = None
+    print(f"Mensagem na sala {room} às {time}: {message}")
 
-    if image:
-        # Se a imagem foi passada como base64, converte para binário
-        if image.startswith('data:image'):
-            # Divide a string para pegar apenas os dados binários da imagem
-            header, encoded_image = image.split(',', 1)
-            image_data = base64.b64decode(encoded_image)
-        else:
-            # Caso contrário, assume que a imagem já é um arquivo binário
-            image_data = image.read()
-
-        # Armazena a imagem no banco de dados
-        conn = get_db()  # Certifique-se de que você tem a função para conectar ao banco de dados
-        cursor = conn.cursor()
-        cursor.execute("""
-            INSERT INTO friendMessages (sender_id, receiver_id, message, image)
-            VALUES (?, ?, ?, ?)
-        """, (sender_id, receiver_id, None, image_data))  # A mensagem é NULL se for só imagem
-        conn.commit()
-        conn.close()
-
-        # Defina a URL para servir a imagem, ajustando conforme sua estrutura
-        image_url = "https://app-site-4r43.onrender.com/menu/"  # Isso deve apontar para a imagem no servidor
-
-    # Caso a mensagem não seja apenas uma imagem
-    print(f"Mensagem na sala {room} às {time}: {message or '[Imagem]'}")
-
-    # Envia a mensagem com ou sem imagem
+    # Envia a mensagem de volta para os clientes na sala
     socketio.emit("message", {
         "room": room,
         "message": message,
@@ -87,7 +48,6 @@ def handle_message(data):
         "time": time,
         "sender": request.sid
     }, room=room)
-
 
 # Criar a aplicação e rodar o WebSocket
 # if __name__ == "__main__":
