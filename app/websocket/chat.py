@@ -42,30 +42,38 @@ def handle_leave(data):
 
 @socketio.on('message')
 def handle_message(data):
-    """Gerencia mensagens e imagens enviadas no chat."""
     room = data['room']
     message = data['message']
-    # image = request.files.get("image", None)  # Obtém a imagem enviada (se houver)
-    image = data['image']  # Obtém a imagem enviada (se houver)
+    image = data.get('image', None)  # Agora usando .get() para evitar KeyError
     time = data.get('time', '00:00')  # Pega o horário ou usa um padrão
 
+    # Inicializa a URL da imagem como None
     image_url = None
+
     if image:
-        # Converte a imagem para binário
-        image_data = image.read()  # Lê a imagem como binário
+        # Se a imagem foi passada como base64, converte para binário
+        if image.startswith('data:image'):
+            # Divide a string para pegar apenas os dados binários da imagem
+            header, encoded_image = image.split(',', 1)
+            image_data = base64.b64decode(encoded_image)
+        else:
+            # Caso contrário, assume que a imagem já é um arquivo binário
+            image_data = image.read()
 
         # Armazena a imagem no banco de dados
-        conn = get_db()
+        conn = get_db()  # Certifique-se de que você tem a função para conectar ao banco de dados
         cursor = conn.cursor()
         cursor.execute("""
             INSERT INTO friendMessages (sender_id, receiver_id, message, image)
             VALUES (?, ?, ?, ?)
-        """, (sender_id, receiver_id, None, image_data))  # A mensagem fica como NULL se for apenas imagem
+        """, (sender_id, receiver_id, None, image_data))  # A mensagem é NULL se for só imagem
         conn.commit()
         conn.close()
 
-        image_url = "/path/to/serve/image"  # Defina a URL para servir a imagem, caso necessário
+        # Defina a URL para servir a imagem, ajustando conforme sua estrutura
+        image_url = "https://app-site-4r43.onrender.com/menu/"  # Isso deve apontar para a imagem no servidor
 
+    # Caso a mensagem não seja apenas uma imagem
     print(f"Mensagem na sala {room} às {time}: {message or '[Imagem]'}")
 
     # Envia a mensagem com ou sem imagem
@@ -76,6 +84,7 @@ def handle_message(data):
         "time": time,
         "sender": request.sid
     }, room=room)
+
 
 # Criar a aplicação e rodar o WebSocket
 # if __name__ == "__main__":
