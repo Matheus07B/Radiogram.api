@@ -45,7 +45,8 @@ def handle_message(data):
     """Gerencia mensagens e imagens enviadas no chat."""
     room = data['room']
     message = data['message']
-    image = request.files.get("image", None)  # Obtém a imagem enviada (se houver)
+    # image = request.files.get("image", None)  # Obtém a imagem enviada (se houver)
+    image = data['image']  # Obtém a imagem enviada (se houver)
     time = data.get('time', '00:00')  # Pega o horário ou usa um padrão
 
     image_url = None
