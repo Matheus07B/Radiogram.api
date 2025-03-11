@@ -35,7 +35,7 @@ def handle_leave(data):
 def handle_message(data):
     room = data['room']
     message = data['message']
-    image = request.files.get("image", None)  # Obtém a imagem enviada (se houver)
+    # image = request.files.get("image", None)  # Obtém a imagem enviada (se houver)
     time = data.get('time', '00:00')  # Pega o horário ou usa um padrão
 
     print(f"Mensagem na sala {room} às {time}: {message}")
@@ -44,7 +44,7 @@ def handle_message(data):
     socketio.emit("message", {
         "room": room,
         "message": message,
-        "image": image_url,
+        # "image": image_url,
         "time": time,
         "sender": request.sid
     }, room=room)
