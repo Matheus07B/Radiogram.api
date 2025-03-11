@@ -9,3 +9,4 @@ gevent>=1.4
 flask_sqlalchemy
 flask_jwt_extended
 werkzeug
+io
