@@ -3,6 +3,9 @@ from flask import Flask, request, Blueprint
 from flask_socketio import send, emit, join_room, leave_room
 from app.websocket import socketio  # Importa a instância global do SocketIO
 
+from io import BytesIO
+import base64
+
 chat_blueprint = Blueprint('chat', __name__)  # Definição do Blueprint
 
 # Função para conectar ao banco de dados
