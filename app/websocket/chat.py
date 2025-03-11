@@ -1,28 +1,23 @@
-import os
-from flask import Flask, request, Blueprint, send_from_directory
+import sqlite3
+from flask import Flask, request, Blueprint
 from flask_socketio import send, emit, join_room, leave_room
-from werkzeug.utils import secure_filename
 from app.websocket import socketio  # Importa a instância global do SocketIO
 
-chat_blueprint = Blueprint("chat", __name__)  # Definição do Blueprint
+chat_blueprint = Blueprint('chat', __name__)  # Definição do Blueprint
 
-UPLOAD_FOLDER = "user-pics"  # Pasta onde as imagens serão armazenadas
-ALLOWED_EXTENSIONS = {"png", "jpg", "jpeg", "gif"}  # Tipos de arquivos aceitos
+# Função para conectar ao banco de dados
+def get_db():
+    conn = sqlite3.connect('chat.db')  # Conecte-se ao banco de dados
+    conn.row_factory = sqlite3.Row  # Para retornar dicionários
+    return conn
 
 users_rooms = {}  # Mapeia SID do usuário para sua sala atual
 
-# Garante que a pasta de upload existe
-os.makedirs(UPLOAD_FOLDER, exist_ok=True)
-
-def allowed_file(filename):
-    """Verifica se o arquivo tem uma extensão permitida."""
-    return "." in filename and filename.rsplit(".", 1)[1].lower() in ALLOWED_EXTENSIONS
-
-@socketio.on("join")
+@socketio.on('join')
 def handle_join(data):
     """Gerencia a entrada do usuário em uma sala."""
-    username = data["username"]
-    new_room = data["room"]
+    username = data['username']
+    new_room = data['room']
     sid = request.sid
 
     if sid in users_rooms:
@@ -34,31 +29,41 @@ def handle_join(data):
     join_room(new_room)
     print(f"Usuário {username} entrou na sala {new_room}")
 
-@socketio.on("leave")
+@socketio.on('leave')
 def handle_leave(data):
     """Gerencia a saída do usuário de uma sala."""
     sid = request.sid
-    room = data.get("room")
+    room = data.get('room')
 
     if sid in users_rooms and users_rooms[sid] == room:
         leave_room(room)
         del users_rooms[sid]
         print(f"Usuário {sid} saiu manualmente da sala {room}")
 
-@socketio.on("message")
+@socketio.on('message')
 def handle_message(data):
     """Gerencia mensagens e imagens enviadas no chat."""
-    room = data["room"]
-    message = data.get("message", None)
-    image = request.files.get("image")  # Obtém a imagem enviada (se houver)
-    time = data.get("time", "00:00")
+    room = data['room']
+    message = data['message']
+    image = request.files.get("image", None)  # Obtém a imagem enviada (se houver)
+    time = data.get('time', '00:00')  # Pega o horário ou usa um padrão
 
     image_url = None
-    if image and allowed_file(image.filename):  # Verifica se é uma imagem válida
-        filename = secure_filename(image.filename)
-        image_path = os.path.join(UPLOAD_FOLDER, filename)
-        image.save(image_path)  # Salva a imagem na pasta
-        image_url = f"/user-pics/{filename}"  # Cria a URL de acesso à imagem
+    if image:
+        # Converte a imagem para binário
+        image_data = image.read()  # Lê a imagem como binário
+
+        # Armazena a imagem no banco de dados
+        conn = get_db()
+        cursor = conn.cursor()
+        cursor.execute("""
+            INSERT INTO friendMessages (sender_id, receiver_id, message, image)
+            VALUES (?, ?, ?, ?)
+        """, (sender_id, receiver_id, None, image_data))  # A mensagem fica como NULL se for apenas imagem
+        conn.commit()
+        conn.close()
+
+        image_url = "/path/to/serve/image"  # Defina a URL para servir a imagem, caso necessário
 
     print(f"Mensagem na sala {room} às {time}: {message or '[Imagem]'}")
 
@@ -70,11 +75,6 @@ def handle_message(data):
         "time": time,
         "sender": request.sid
     }, room=room)
-
-@chat_blueprint.route("/user-pics/<filename>")
-def uploaded_file(filename):
-    """Serve imagens armazenadas na pasta user-pics."""
-    return send_from_directory(UPLOAD_FOLDER, filename)
 
 # Criar a aplicação e rodar o WebSocket
 # if __name__ == "__main__":
