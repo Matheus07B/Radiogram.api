@@ -17,10 +17,11 @@ CREATE TABLE IF NOT EXISTS friendships (
 
 CREATE TABLE IF NOT EXISTS friendMessages (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
-    sender_id INTEGER NOT NULL,                           -- ID do usuário que enviou a mensagem
-    receiver_id INTEGER NOT NULL,                         -- ID do usuário que recebeu a mensagem
-    message TEXT NOT NULL,                                -- Conteúdo da mensagem
-    timestamp DATETIME DEFAULT CURRENT_TIMESTAMP,         -- Data e hora do envio
+    sender_id INTEGER NOT NULL,
+    receiver_id INTEGER NOT NULL,
+    message TEXT,                               -- Mensagem pode ser nula se for imagem
+    image BLOB,                                 -- Armazena a imagem como binário
+    timestamp DATETIME DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (sender_id) REFERENCES usuarios (id),
     FOREIGN KEY (receiver_id) REFERENCES usuarios (id)
 );
