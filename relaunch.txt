@@ -1,5 +1,1 @@
-1 - 0
-
--- Inserir amizade
-INSERT INTO friendships (user_id, friend_id) VALUES (2, 1);  -- João é amigo de Maria
-sqlite> SELECT * FROM friendships WHERE user_id = 2
+15/03/2025 - Commit do dia 😎
