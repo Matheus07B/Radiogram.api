@@ -1,9 +1,11 @@
-services:
-  - type: web
-    name: app-api
-    env: python
-    buildCommand: pip install -r requirements.txt
-    startCommand: gunicorn -b 0.0.0.0:8000 run:app
-    plan: free
-    branch: main
-    healthCheckPath:
+# services:
+#   - type: web
+#     name: app-api
+#     env: python
+#     buildCommand: pip install -r requirements.txt
+#     startCommand: gunicorn -b 0.0.0.0:8000 run:app
+#     plan: free
+#     branch: main
+#     healthCheckPath:
+
+# Não necessario pois o render ja tem o .yaml imbutido no deploy.
