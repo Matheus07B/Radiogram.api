@@ -1,11 +1,11 @@
-__pycache__/
-
+# Archives .???
 .env
-
 .vscode
-
 .git
 
+# Archives .db
 database.db
 
+# Directories
+__pycache__/
 BACKUP/
