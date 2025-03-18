@@ -161,15 +161,15 @@ def get_last_message():
 
     # Verificar se existe uma mensagem
     if last_message:
-        mensagem, timestamp = last_message  # Desempacota a tupla
+        # mensagem, timestamp = last_message  # Desempacota a tupla
         return jsonify({
-            "lastMessage": mensagem,
-            "timestamp": timestamp  # Retorna o timestamp corretamente
+            "lastMessage": last_message[0],  # O primeiro campo da tupla é a mensagem
+            "timestamp": last_message[1]  # O segundo campo é o timestamp
         }), 200
     else:
         return jsonify({
             "lastMessage": "",
-            "timestamp": ""
+            "timestamp": ""  # Retorna string vazia se não houver timestamp
         }), 200
 
 # Remover aqui caso necessario.
