@@ -68,8 +68,8 @@ Se você deseja contribuir para o projeto, fique à vontade para fazer um fork e
 
 ## Mini mundo
 
-Confira o projeto [Minimundo](https://github.com/Matheus07B/docs/mini-mundo/README.md), que é parte do mesmo ecossistema.
+Confira o projeto [Minimundo](https://github.com/Matheus07B/Radiogram.api/docs/mini-mundo/README.md), que é parte do mesmo ecossistema.
 
 ## Diagrama de classe
 
-Aqui vai estar o [diagrama de classe](https://github.com/Matheus07B/docs/diagrama-de-classes/README.md).
+Aqui vai estar o [diagrama de classe](https://github.com/Matheus07B/Radiogram.api/docs/diagrama-de-classes/README.md).
