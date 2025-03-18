@@ -1,11 +1,24 @@
-## Inserir amizade
+# Operação direta no banco de dados.
+
+<h2 style="border: none">Inserir amizade</h2>
 
 ```sql
 INSERT INTO friendships (user_id, friend_id) VALUES (2, 1);  -- João é amigo de Maria
 SELECT * FROM friendships WHERE user_id = 2;
 ```
 
-## Logar na conta
+## Inserir mensagem na tabela de mensagens
+
+```sql
+INSERT INTO friendMessages (sender_id, receiver_id, message, room)
+VALUES (1, 2, 'Tudo certo com você?', 'sala1');
+```
+
+<br/>
+
+# Operação usando Postman ou cURL
+
+<h2 style="border: none">Logar na conta</h2>
 
 ```bash
 curl -X POST "http://127.0.0.1:5000/login" \
@@ -41,7 +54,7 @@ curl -X GET "http://127.0.0.1:5000/friends/list" \
 ]
 ```
 
-## Listar mensagens de um amigo específico
+**Listar mensagens de um amigo específico**
 
 ```bash
 curl -X GET "http://127.0.0.1:5000/friends/list/selected?friend_id=2" \
@@ -64,11 +77,3 @@ curl -X POST "http://127.0.0.1:5001/register" \
   "userUUID": "7275c7fc-9c53-48b8-b68f-49cb212f226a"
 }
 ```
-
-## Inserir mensagem na tabela de mensagens
-
-```sql
-INSERT INTO friendMessages (sender_id, receiver_id, message, room)
-VALUES (1, 2, 'Tudo certo com você?', 'sala1');
-```
-

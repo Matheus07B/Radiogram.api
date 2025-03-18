@@ -1,3 +1,11 @@
+# =============================================== #
+#
+# Não necessario pois o render ja tem 
+# o .yaml imbutido no deploy.
+# È mais como uma descrição do projeto.
+#
+# =============================================== #
+
 # services:
 #   - type: web
 #     name: app-api
@@ -7,5 +15,3 @@
 #     plan: free
 #     branch: main
 #     healthCheckPath:
-
-# Não necessario pois o render ja tem o .yaml imbutido no deploy.
