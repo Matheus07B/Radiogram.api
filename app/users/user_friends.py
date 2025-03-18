@@ -167,7 +167,10 @@ def get_last_message():
             "timestamp": timestamp  # Retorna o timestamp corretamente
         }), 200
     else:
-        return jsonify({"lastMessage": "Nenhuma mensagem encontrada"}), 404
+        return jsonify({
+            "lastMessage": "",
+            "timestamp": ""
+        }), 200
 
 # Remover aqui caso necessario.
 
