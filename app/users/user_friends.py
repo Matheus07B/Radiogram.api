@@ -162,7 +162,10 @@ def get_last_message():
 
     # Verificar se existe uma mensagem
     if last_message:
-        return jsonify({"lastMessage": last_message["message"]}), 200
+        return jsonify({
+            "lastMessage": last_message["message"],
+            "timestamp": last_message["timestamp"]  # Retorna o timestamp
+        }), 200
     else:
         return jsonify({"lastMessage": "Nenhuma mensagem encontrada"}), 404
 # Remover aqui caso necessario.
