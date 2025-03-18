@@ -159,9 +159,21 @@ def get_last_message():
     last_message = cursor.fetchone()
     conn.close()
 
+    # # Verificar se existe uma mensagem
+    # if last_message:
+    #     mensagem, timestamp = last_message  # Desempacota a tupla
+    #     return jsonify({
+    #         "lastMessage": mensagem,
+    #         "timestamp": timestamp  # Retorna o timestamp corretamente
+    #     }), 200
+    # else:
+    #     return jsonify({
+    #         "lastMessage": "",
+    #         "timestamp": ""
+    #     }), 404
+
     # Verificar se existe uma mensagem
     if last_message:
-        # mensagem, timestamp = last_message  # Desempacota a tupla
         return jsonify({
             "lastMessage": last_message[0],  # O primeiro campo da tupla é a mensagem
             "timestamp": last_message[1]  # O segundo campo é o timestamp
