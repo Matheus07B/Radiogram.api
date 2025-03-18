@@ -1,11 +1,25 @@
-# Archives .???
+# Arquivos de configuração e ambiente
 .env
-.vscode
-.git
+.vscode/
+.git/
 
-# Archives .db
+# Banco de dados
+*.db
 database.db
 
-# Directories
+# Diretórios Python
 __pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Diretórios de backup e temporários
 BACKUP/
+tmp/
+logs/
+
+# Dependências e pacotes
+venv/
+*.egg-info/
+dist/
+build/
