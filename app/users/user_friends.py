@@ -126,11 +126,10 @@ def get_last_message():
         return jsonify({"error": "Formato de token inválido"}), 401
 
     try:
-        # Extrair o token
+        # Extrair e decodificar o token JWT
         token = auth_header.split(" ")[1]
-        # Decodificar o token JWT usando a SECRET_KEY da configuração
         payload = jwt.decode(token, Config.SECRET_KEY, algorithms=["HS256"])
-        user_id = payload.get("user_id")  # Obter o user_id do payload
+        user_id = payload.get("user_id")
         if not user_id:
             return jsonify({"error": "Token inválido: user_id não encontrado"}), 401
     except jwt.ExpiredSignatureError:
@@ -139,7 +138,7 @@ def get_last_message():
         return jsonify({"error": "Token inválido"}), 401
 
     # Obter o ID do amigo a partir dos parâmetros da requisição
-    friend_id = request.args.get('friend_id')  # O friend_id será passado como parâmetro na URL
+    friend_id = request.args.get('friend_id')
     if not friend_id:
         return jsonify({"error": "friend_id é obrigatório"}), 400
 
@@ -149,7 +148,7 @@ def get_last_message():
 
     cursor.execute(
         '''
-        SELECT m.message
+        SELECT m.message, m.timestamp
         FROM friendMessages m
         WHERE (m.sender_id = ? AND m.receiver_id = ?)
            OR (m.sender_id = ? AND m.receiver_id = ?)
@@ -162,12 +161,14 @@ def get_last_message():
 
     # Verificar se existe uma mensagem
     if last_message:
+        mensagem, timestamp = last_message  # Desempacota a tupla
         return jsonify({
-            "lastMessage": last_message["message"],
-            "timestamp": last_message["timestamp"]  # Retorna o timestamp
+            "lastMessage": mensagem,
+            "timestamp": timestamp  # Retorna o timestamp corretamente
         }), 200
     else:
         return jsonify({"lastMessage": "Nenhuma mensagem encontrada"}), 404
+
 # Remover aqui caso necessario.
 
 @friends_blueprint.route('/get/room', methods=['GET'])
