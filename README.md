@@ -66,10 +66,10 @@ A API utiliza o **Socket.IO** para comunicação em tempo real. As principais a�
 
 Se você deseja contribuir para o projeto, fique à vontade para fazer um fork e enviar pull requests. Qualquer contribuição será muito bem-vinda! -->
 
-## Mini mundo
+<!-- ## Mini mundo
 
 Confira o projeto [Minimundo](https://github.com/Matheus07B/Radiogram.api/docs/mini-mundo/README.md), que é parte do mesmo ecossistema.
 
 ## Diagrama de classe
 
-Aqui vai estar o [diagrama de classe](https://github.com/Matheus07B/Radiogram.api/docs/diagrama-de-classes/README.md).
+Aqui vai estar o [diagrama de classe](https://github.com/Matheus07B/Radiogram.api/docs/diagrama-de-classes/README.md). -->
