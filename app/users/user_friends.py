@@ -89,11 +89,11 @@ def select_friend_chat():
 
     cursor.execute(
         '''
-        SELECT m.id, m.message, m.timestamp, m.sender_id, m.receiver_id
+        SELECT m.id, m.message, m.time, m.sender_id, m.receiver_id
         FROM friendMessages m
         WHERE (m.sender_id = ? AND m.receiver_id = ?)
            OR (m.sender_id = ? AND m.receiver_id = ?)
-        ORDER BY m.timestamp
+        ORDER BY m.time
         ''', (user_id, friend_id, friend_id, user_id)
     )
     messages = cursor.fetchall()
@@ -104,7 +104,7 @@ def select_friend_chat():
         {
             "id": message["id"],
             "message": message["message"],
-            "timestamp": message["timestamp"],
+            "time": message["time"],  # Substituído 'timestamp' por 'time'
             "sender_id": message["sender_id"],
             "receiver_id": message["receiver_id"]
         }
@@ -148,41 +148,41 @@ def get_last_message():
 
     cursor.execute(
         '''
-        SELECT m.message, m.timestamp
+        SELECT m.message, m.time
         FROM friendMessages m
         WHERE (m.sender_id = ? AND m.receiver_id = ?)
            OR (m.sender_id = ? AND m.receiver_id = ?)
-        ORDER BY m.timestamp DESC
+        ORDER BY m.time DESC
         LIMIT 1
         ''', (user_id, friend_id, friend_id, user_id)
     )
     last_message = cursor.fetchone()
     conn.close()
 
-    # # Verificar se existe uma mensagem
-    # if last_message:
-    #     mensagem, timestamp = last_message  # Desempacota a tupla
-    #     return jsonify({
-    #         "lastMessage": mensagem,
-    #         "timestamp": timestamp  # Retorna o timestamp corretamente
-    #     }), 200
-    # else:
-    #     return jsonify({
-    #         "lastMessage": "",
-    #         "timestamp": ""
-    #     }), 404
-
     # Verificar se existe uma mensagem
     if last_message:
+        mensagem, time = last_message  # Desempacota a tupla
         return jsonify({
-            "lastMessage": last_message[0],  # O primeiro campo da tupla é a mensagem
-            "timestamp": last_message[1]  # O segundo campo é o timestamp
+            "lastMessage": mensagem,
+            "time": time  # Retorna a nova coluna "time"
         }), 200
     else:
         return jsonify({
             "lastMessage": "",
-            "timestamp": ""  # Retorna string vazia se não houver timestamp
-        }), 200
+            "time": ""
+        }), 404
+    
+    # Verificar se existe uma mensagem
+    # if last_message:
+    #     return jsonify({
+    #         "lastMessage": last_message[0],  # O primeiro campo da tupla é a mensagem
+    #         "timestamp": last_message[1]  # O segundo campo é o timestamp
+    #     }), 200
+    # else:
+    #     return jsonify({
+    #         "lastMessage": "",
+    #         "timestamp": ""  # Retorna string vazia se não houver timestamp
+    #     }), 200
 
 # Remover aqui caso necessario.
 
@@ -248,6 +248,7 @@ def insert_message():
         sender_id = data.get('sender_id')
         receiver_id = data.get('receiver_id')
         message = data.get('message')
+        time = data.get('time')
 
         if not sender_id or not receiver_id or not message:
             return jsonify({"error": "Faltando informações"}), 400
@@ -258,9 +259,9 @@ def insert_message():
 
         # Inserir mensagem na tabela
         cursor.execute('''
-            INSERT INTO friendMessages (sender_id, receiver_id, message)
-            VALUES (?, ?, ?)
-        ''', (sender_id, receiver_id, message))
+            INSERT INTO friendMessages (sender_id, receiver_id, message, time)
+            VALUES (?, ?, ?, ?)
+        ''', (sender_id, receiver_id, message, time))
 
         conn.commit()
 

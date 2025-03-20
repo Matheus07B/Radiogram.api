@@ -31,23 +31,43 @@ def handle_leave(data):
         del users_rooms[sid]
         print(f"Usuário {sid} saiu manualmente da sala {room}")
 
+# Emissão de mensagens.
 @socketio.on('message')
 def handle_message(data):
     room = data['room']
     message = data['message']
-    # image = request.files.get("image", None)  # Obtém a imagem enviada (se houver)
-    time = data.get('time', '00:00')  # Pega o horário ou usa um padrão
+    time = data['time']  # Pega o horário ou usa um padrão
 
-    print(f"Mensagem na sala {room} às {time}: {message}")
+    # Só para debug.
+    # print(f"Mensagem na sala {room} às {time}: {message}")
+
+    print(room, message, time)
 
     # Envia a mensagem de volta para os clientes na sala
     socketio.emit("message", {
         "room": room,
         "message": message,
-        # "image": image_url,
         "time": time,
         "sender": request.sid
     }, room=room)
+
+# Emissão de fotos.
+@socketio.on('image')
+def handle_image(data):
+    room = data['room']
+    image_data = data['image']  # Imagem em base64
+    time = data.get('time', "Horário desconhecido")  # Pega o horário ou usa um padrão
+    
+    print(f"Imagem recebida na sala {room} às {time}")
+
+    # Reenvia para todos os clientes na sala
+    socketio.emit("image", {
+        "room": room,
+        "image": image_data,
+        "time": time,
+        "sender": request.sid
+    }, room=room)
+
 
 # Criar a aplicação e rodar o WebSocket
 # if __name__ == "__main__":

@@ -9,7 +9,6 @@ import os
 
 register_blueprint = Blueprint('register', __name__)
 SECRET_KEY = os.environ.get("SECRET_KEY")
-# "minha-chave-secreta")
 
 @register_blueprint.route('', methods=['POST'])
 def register():
