@@ -147,14 +147,14 @@ def get_last_message():
     cursor = conn.cursor()
 
     cursor.execute(
-        '''
+    '''
         SELECT m.message, m.time
         FROM friendMessages m
         WHERE (m.sender_id = ? AND m.receiver_id = ?)
-           OR (m.sender_id = ? AND m.receiver_id = ?)
-        ORDER BY m.time DESC
+        OR (m.sender_id = ? AND m.receiver_id = ?)
+        ORDER BY m.timestamp DESC, m.id DESC
         LIMIT 1
-        ''', (user_id, friend_id, friend_id, user_id)
+    ''', (user_id, friend_id, friend_id, user_id)
     )
     last_message = cursor.fetchone()
     conn.close()
@@ -163,26 +163,14 @@ def get_last_message():
     if last_message:
         mensagem, time = last_message  # Desempacota a tupla
         return jsonify({
-            "lastMessage": mensagem,
-            "time": time  # Retorna a nova coluna "time"
+            "lastMessage": mensagem, # Retorna a última mensagem
+            "time": time  # Retorna a hota da ultima mensagem, ex: 13:40
         }), 200
     else:
         return jsonify({
             "lastMessage": "",
             "time": ""
         }), 404
-    
-    # Verificar se existe uma mensagem
-    # if last_message:
-    #     return jsonify({
-    #         "lastMessage": last_message[0],  # O primeiro campo da tupla é a mensagem
-    #         "timestamp": last_message[1]  # O segundo campo é o timestamp
-    #     }), 200
-    # else:
-    #     return jsonify({
-    #         "lastMessage": "",
-    #         "timestamp": ""  # Retorna string vazia se não houver timestamp
-    #     }), 200
 
 # Remover aqui caso necessario.
 
@@ -273,7 +261,7 @@ def insert_message():
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
-@friends_blueprint.route('/add', methods=['GET'])
+@friends_blueprint.route('/add-friend', methods=['GET'])
 # @verificar_token  # Protege este endpoint com verificação de token
 def addFriends():
     return jsonify({"For what": "To add a new friend!"}), 200
