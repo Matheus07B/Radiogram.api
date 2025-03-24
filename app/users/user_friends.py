@@ -89,7 +89,7 @@ def select_friend_chat():
 
     cursor.execute(
         '''
-        SELECT m.id, m.message, m.timestamp, m.sender_id, m.receiver_id
+        SELECT m.id, m.message, m.time, m.sender_id, m.receiver_id
         FROM friendMessages m
         WHERE (m.sender_id = ? AND m.receiver_id = ?)
            OR (m.sender_id = ? AND m.receiver_id = ?)
