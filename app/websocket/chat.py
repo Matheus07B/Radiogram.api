@@ -1,3 +1,10 @@
+# import dropbox
+# import base64
+# import os
+
+from datetime import datetime
+from io import BytesIO
+
 from flask import Flask, request, Blueprint
 from flask_socketio import send, emit, join_room, leave_room
 from app.websocket import socketio  # Importa a instância global do SocketIO
@@ -55,15 +62,32 @@ def handle_message(data):
 @socketio.on('image')
 def handle_image(data):
     room = data['room']
-    image_data = data['image']  # Imagem em base64
+    image_url = data['image']  # Imagem em base64
     time = data.get('time', "Horário desconhecido")  # Pega o horário ou usa um padrão
-    
+
     print(f"Imagem recebida na sala {room} às {time}")
 
-    # Reenvia para todos os clientes na sala
-    socketio.emit("image", {
+    # Reenviar para os clientes na sala com a URL do Dropbox
+    emit("image", {
         "room": room,
-        "image": image_data,
+        "image": image_url,  # URL pública da imagem
+        "time": time,
+        "sender": request.sid
+    }, room=room)
+
+# Emissão de documentos.
+@socketio.on('document')
+def handle_document(data):
+    room = data['room']
+    document_data = data['document']  # Imagem em base64
+    time = data.get('time', "Horário desconhecido")  # Pega o horário ou usa um padrão
+    
+    print(f"Documento recebido na sala {room} às {time}")
+
+    # Reenvia para todos os clientes na sala
+    socketio.emit("document", {
+        "room": room,
+        "document": document_data,
         "time": time,
         "sender": request.sid
     }, room=room)

@@ -20,7 +20,7 @@ CREATE TABLE IF NOT EXISTS friendMessages (
     sender_id INTEGER NOT NULL,
     receiver_id INTEGER NOT NULL,
     message TEXT,                               -- Mensagem pode ser nula se for imagem
-    image BLOB,                                 -- Armazena a imagem como binário
+    image TEXT,                                 -- Armazena a imagem como binário
     time TEXT,
     timestamp DATETIME DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (sender_id) REFERENCES usuarios (id),
