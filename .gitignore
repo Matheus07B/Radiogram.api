@@ -4,8 +4,8 @@
 .git/
 
 # Banco de dados
-# *.db
-# database.db
+*.db
+database.db
 
 # Diretórios Python
 __pycache__/
