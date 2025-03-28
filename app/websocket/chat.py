@@ -1,6 +1,8 @@
 # import dropbox
-# import base64
 # import os
+import base64
+import requests
+import sqlite3
 
 from datetime import datetime
 from io import BytesIO
@@ -8,6 +10,7 @@ from io import BytesIO
 from flask import Flask, request, Blueprint
 from flask_socketio import send, emit, join_room, leave_room
 from app.websocket import socketio  # Importa a instância global do SocketIO
+from app.models.database import get_db_connection
 
 chat_blueprint = Blueprint('chat', __name__)  # Definição do Blueprint
 
@@ -59,27 +62,66 @@ def handle_message(data):
     }, room=room)
 
 # Emissão de fotos.
+# Configuração do backend de armazenamento
+STORAGE_API_URL = "https://cloud-personal.onrender.com/upload"
+
 @socketio.on('image')
 def handle_image(data):
     room = data['room']
-    image_url = data['image']  # Imagem em base64
-    time = data.get('time', "Horário desconhecido")  # Pega o horário ou usa um padrão
+    image_base64 = data['image']  # Imagem recebida em base64
+    senderID = data['sender_id']
+    friendID = data['friend_id']
+    time = data.get('time', "Horário desconhecido")
 
-    print(f"Imagem recebida na sala {room} às {time}")
-
-    # Reenviar para os clientes na sala com a URL do Dropbox
-    emit("image", {
+    # Reenviar a imagem para os clientes com a URL real
+    socketio.emit("image", {
         "room": room,
-        "image": image_url,  # URL pública da imagem
+        "image": image_base64,  # URL pública da imagem armazenada
         "time": time,
         "sender": request.sid
     }, room=room)
+
+    print(f"Imagem recebida na sala {room} às {time}")
+
+    try:
+        # Decodificar a imagem base64
+        image_data = base64.b64decode(image_base64.split(',')[1])  # Remove o prefixo 'data:image/...;base64,'
+        files = {'file': ('image.png', BytesIO(image_data), 'image/png')}
+
+        # Enviar para o backend
+        response = requests.post(STORAGE_API_URL, files=files)
+
+        if response.status_code == 200:
+            uploaded_image_url = response.json().get("url")  # URL gerada no backend
+
+            cursor = get_db_connection()
+
+            # Query de inserção
+            query = "INSERT INTO friendMessages (image, time, sender_id, receiver_id) VALUES (?, ?, ?, ?)"
+            data = (
+                uploaded_image_url,
+                time,
+                senderID,
+                friendID
+            )
+
+            cursor.execute(query, data)
+            cursor.commit()
+            cursor.close()
+
+            # Debug print
+            # print("Imagem inserida com sucesso, link: "+ uploaded_image_url)
+
+        else:
+            print(f"Erro ao fazer upload da imagem: {response.text}")
+    except Exception as e:
+        print(f"Erro no processamento da imagem: {e}")
 
 # Emissão de documentos.
 @socketio.on('document')
 def handle_document(data):
     room = data['room']
-    document_data = data['document']  # Imagem em base64
+    document_data = data['document']
     time = data.get('time', "Horário desconhecido")  # Pega o horário ou usa um padrão
     
     print(f"Documento recebido na sala {room} às {time}")

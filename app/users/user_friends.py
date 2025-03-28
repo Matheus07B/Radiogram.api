@@ -8,6 +8,7 @@ from flask_sqlalchemy import SQLAlchemy
 from flask_jwt_extended import jwt_required, get_jwt_identity
 
 import jwt
+import sqlite3
 
 friends_blueprint = Blueprint('friends', __name__)
 
@@ -61,16 +62,13 @@ def select_friend_chat():
     if not auth_header:
         return jsonify({"error": "Token de autorização é obrigatório"}), 401
 
-    # Verificar se o cabeçalho está no formato esperado "Bearer <token>"
     if not auth_header.startswith("Bearer "):
         return jsonify({"error": "Formato de token inválido"}), 401
 
     try:
-        # Extrair o token
         token = auth_header.split(" ")[1]
-        # Decodificar o token JWT usando a SECRET_KEY da configuração
         payload = jwt.decode(token, Config.SECRET_KEY, algorithms=["HS256"])
-        user_id = payload.get("user_id")  # Obter o user_id do payload
+        user_id = payload.get("user_id")
         if not user_id:
             return jsonify({"error": "Token inválido: user_id não encontrado"}), 401
     except jwt.ExpiredSignatureError:
@@ -78,18 +76,18 @@ def select_friend_chat():
     except jwt.InvalidTokenError:
         return jsonify({"error": "Token inválido"}), 401
 
-    # Obter o ID do amigo a partir dos parâmetros da requisição
-    friend_id = request.args.get('friend_id')  # O friend_id será passado como parâmetro na URL
+    friend_id = request.args.get('friend_id')
     if not friend_id:
         return jsonify({"error": "friend_id é obrigatório"}), 400
 
-    # Consultar as mensagens entre o usuário autenticado e o amigo
+    # Conectar ao banco e configurar cursor para dicionário
     conn = get_db_connection()
+    conn.row_factory = sqlite3.Row  # Permite acessar os dados por chave (nome da coluna)
     cursor = conn.cursor()
 
     cursor.execute(
         '''
-        SELECT m.id, m.message, m.time, m.sender_id, m.receiver_id
+        SELECT m.id, m.message, m.image, m.time, m.sender_id, m.receiver_id
         FROM friendMessages m
         WHERE (m.sender_id = ? AND m.receiver_id = ?)
            OR (m.sender_id = ? AND m.receiver_id = ?)
@@ -99,19 +97,20 @@ def select_friend_chat():
     messages = cursor.fetchall()
     conn.close()
 
-    # Formatar as mensagens para retorno em JSON
-    messages_data = [
-        {
+    # Converter os resultados para JSON
+    messages_data = []
+    for message in messages:
+        messages_data.append({
             "id": message["id"],
             "message": message["message"],
-            "time": message["time"],  # Substituído 'timestamp' por 'time'
+            "image_url": f"{message['image']}" if message["image"] else None,
+            "time": message["time"],
             "sender_id": message["sender_id"],
             "receiver_id": message["receiver_id"]
-        }
-        for message in messages
-    ]
-    
+        })
+
     return jsonify({"messages": messages_data}), 200
+
 
 # Remover aqui caso necessario.
 @friends_blueprint.route('/list/last', methods=['GET'])
