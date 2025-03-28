@@ -73,59 +73,47 @@ def handle_image(data):
     friendID = data['friend_id']
     time = data.get('time', "Horário desconhecido")
 
-    # Verificar se já está emitindo para evitar recursão
-    if not hasattr(handle_image, 'emitting'):
-        handle_image.emitting = True  # Flag para evitar recursão
+    try:
+        # Emissão para os clientes antes de enviar para o armazenamento
+        # Assim, não fica esperando pela resposta do servidor de imagens
+        socketio.emit("image", {
+            "room": room,
+            "image": image_base64,  # URL pública da imagem armazenada (temporária por enquanto)
+            "time": time,
+            "sender": request.sid
+        }, room=room)
 
-        try:
-            # Emite a imagem para todos os clientes da sala
-            socketio.emit("image", {
-                "room": room,
-                "image": image_base64,  # URL pública da imagem armazenada
-                "time": time,
-                "sender": request.sid
-            }, room=room)
+        print(f"Imagem recebida na sala {room} às {time}")
 
-            # Log de recebimento da imagem
-            print(f"Imagem recebida na sala {room} às {time}")
+        # Decodificar a imagem base64
+        image_data = base64.b64decode(image_base64.split(',')[1])  # Remove o prefixo 'data:image/...;base64,'
+        files = {'file': ('image.png', BytesIO(image_data), 'image/png')}
 
-            # Decodificar a imagem base64
-            image_data = base64.b64decode(image_base64.split(',')[1])  # Remove o prefixo 'data:image/...;base64,'
-            files = {'file': ('image.png', BytesIO(image_data), 'image/png')}
+        # Enviar para o backend (armazenar a imagem na nuvem)
+        response = requests.post(STORAGE_API_URL, files=files)
 
-            # Enviar para o backend (armazenar a imagem na nuvem)
-            response = requests.post(STORAGE_API_URL, files=files)
+        if response.status_code == 200:
+            uploaded_image_url = response.json().get("url")  # URL gerada no backend
 
-            if response.status_code == 200:
-                uploaded_image_url = response.json().get("url")  # URL gerada no backend
+            # Conectar ao banco de dados
+            cursor = get_db_connection()
 
-                # Conectar ao banco de dados
-                cursor = get_db_connection()
+            # Query de inserção
+            query = "INSERT INTO friendMessages (image, time, sender_id, receiver_id) VALUES (?, ?, ?, ?)"
+            data = (uploaded_image_url, time, senderID, friendID)
 
-                # Query de inserção
-                query = "INSERT INTO friendMessages (image, time, sender_id, receiver_id) VALUES (?, ?, ?, ?)"
-                data = (
-                    uploaded_image_url,
-                    time,
-                    senderID,
-                    friendID
-                )
+            # Executar a query para salvar a imagem no banco de dados
+            cursor.execute(query, data)
+            cursor.commit()
+            cursor.close()
 
-                # Executar a query para salvar a imagem no banco de dados
-                cursor.execute(query, data)
-                cursor.commit()
-                cursor.close()
+            print("Imagem inserida com sucesso, link: " + uploaded_image_url)
 
-                print("Imagem inserida com sucesso, link: " + uploaded_image_url)
+        else:
+            print(f"Erro ao fazer upload da imagem: {response.text}")
 
-            else:
-                print(f"Erro ao fazer upload da imagem: {response.text}")
-
-        except Exception as e:
-            print(f"Erro no processamento da imagem: {e}")
-
-        finally:
-            delattr(handle_image, 'emitting')  # Limpar a flag para permitir novas emissões
+    except Exception as e:
+        print(f"Erro no processamento da imagem: {e}")
 
 # Emissão de documentos.
 @socketio.on('document')
