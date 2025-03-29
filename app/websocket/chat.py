@@ -74,11 +74,10 @@ def handle_image(data):
     time = data.get('time', "Horário desconhecido")
 
     try:
-        # Emissão para os clientes antes de enviar para o armazenamento
-        # Assim, não fica esperando pela resposta do servidor de imagens
-        socketio.emit("image", {
+        # Emitir com um nome de evento diferente para evitar recursão
+        socketio.emit("image_received", {  # Mudei de "image" para "image_received"
             "room": room,
-            "image": image_base64,  # URL pública da imagem armazenada (temporária por enquanto)
+            "image": image_base64,
             "time": time,
             "sender": request.sid
         }, room=room)
@@ -100,10 +99,10 @@ def handle_image(data):
 
             # Query de inserção
             query = "INSERT INTO friendMessages (image, time, sender_id, receiver_id) VALUES (?, ?, ?, ?)"
-            data = (uploaded_image_url, time, senderID, friendID)
+            query_data = (uploaded_image_url, time, senderID, friendID)  # Mudei o nome da variável para evitar conflito
 
             # Executar a query para salvar a imagem no banco de dados
-            cursor.execute(query, data)
+            cursor.execute(query, query_data)
             cursor.commit()
             cursor.close()
 
