@@ -61,58 +61,69 @@ def handle_message(data):
         "sender": request.sid
     }, room=room)
 
-# Emissão de fotos.
-# Configuração do backend de armazenamento
 STORAGE_API_URL = "https://cloud-personal.onrender.com/upload"
+processed_messages = set()  # Cache global para mensagens processadas
 
 @socketio.on('image')
 def handle_image(data):
-    room = data['room']
-    image_base64 = data['image']  # Imagem recebida em base64
-    senderID = data['sender_id']
-    friendID = data['friend_id']
-    time = data.get('time', "Horário desconhecido")
+    # Cria um ID único para a mensagem
+    message_id = f"{data.get('sender_id')}-{data.get('time')}-{hash(data.get('image'))}"
+    
+    # Verifica se já processou esta mensagem
+    if message_id in processed_messages:
+        return
+    processed_messages.add(message_id)
 
     try:
-        # Emitir com um nome de evento diferente para evitar recursão
-        socketio.emit("image_received", {  # Mudei de "image" para "image_received"
-            "room": room,
-            "image": image_base64,
-            "time": time,
-            "sender": request.sid
-        }, room=room)
+        # Extrai dados com tratamento mais seguro
+        room = data.get('room')
+        image_base64 = data.get('image', '')
+        senderID = data.get('sender_id')
+        friendID = data.get('friend_id')
+        time = data.get('time', datetime.now().isoformat())
 
-        print(f"Imagem recebida na sala {room} às {time}")
+        if not all([room, image_base64, senderID, friendID]):
+            raise ValueError("Dados incompletos recebidos")
 
-        # Decodificar a imagem base64
-        image_data = base64.b64decode(image_base64.split(',')[1])  # Remove o prefixo 'data:image/...;base64,'
+        # 1. Primeiro armazena a imagem
+        image_data = base64.b64decode(image_base64.split(',')[1])
         files = {'file': ('image.png', BytesIO(image_data), 'image/png')}
-
-        # Enviar para o backend (armazenar a imagem na nuvem)
+        
         response = requests.post(STORAGE_API_URL, files=files)
+        response.raise_for_status()  # Lança exceção para códigos 4xx/5xx
+        
+        uploaded_image_url = response.json().get("url")
+        if not uploaded_image_url:
+            raise ValueError("URL não recebida do servidor de armazenamento")
 
-        if response.status_code == 200:
-            uploaded_image_url = response.json().get("url")  # URL gerada no backend
-
-            # Conectar ao banco de dados
-            cursor = get_db_connection()
-
-            # Query de inserção
-            query = "INSERT INTO friendMessages (image, time, sender_id, receiver_id) VALUES (?, ?, ?, ?)"
-            query_data = (uploaded_image_url, time, senderID, friendID)  # Mudei o nome da variável para evitar conflito
-
-            # Executar a query para salvar a imagem no banco de dados
-            cursor.execute(query, query_data)
+        # 2. Armazena no banco de dados
+        cursor = get_db_connection()
+        try:
+            cursor.execute(
+                "INSERT INTO friendMessages (image, time, sender_id, receiver_id) VALUES (?, ?, ?, ?)",
+                (uploaded_image_url, time, senderID, friendID)
+            )
             cursor.commit()
+        finally:
             cursor.close()
 
-            print("Imagem inserida com sucesso, link: " + uploaded_image_url)
+        # 3. Só então notifica os clientes - com um evento DIFERENTE
+        socketio.emit("new_image_notification", {
+            "room": room,
+            "image_url": uploaded_image_url,
+            "time": time,
+            "sender_id": senderID,
+            "message_id": message_id  # Inclui o ID para controle no cliente
+        }, room=room)
 
-        else:
-            print(f"Erro ao fazer upload da imagem: {response.text}")
+        print(f"Imagem processada com sucesso. ID: {message_id}")
 
+    except requests.RequestException as e:
+        print(f"Erro na requisição HTTP: {str(e)}")
     except Exception as e:
-        print(f"Erro no processamento da imagem: {e}")
+        print(f"Erro crítico: {str(e)}")
+        # Opcional: pode remover do cache em caso de falha
+        processed_messages.discard(message_id)
 
 # Emissão de documentos.
 @socketio.on('document')
