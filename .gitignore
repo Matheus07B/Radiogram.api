@@ -19,7 +19,7 @@ tmp/
 logs/
 
 # Dependências e pacotes
-venv/
-# *.egg-info/
-# dist/
-# build/
+venv/ 
+*.egg-info/
+dist/
+build/
