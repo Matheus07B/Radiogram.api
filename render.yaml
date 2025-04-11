@@ -1,17 +1,15 @@
 # =============================================== #
 #
-# Não necessario pois o render ja tem 
-# o .yaml imbutido no deploy.
-# È mais como uma descrição do projeto.
+# Não estou usando mais o render!
 #
 # =============================================== #
 
 # services:
 #   - type: web
-#     name: app-api
+#     name: Radiogram.api
 #     env: python
 #     buildCommand: pip install -r requirements.txt
-#     startCommand: gunicorn -b 0.0.0.0:8000 run:app
-#     plan: free
+#     startCommand: gunicorn -b 127.0.0.1:5001 run:app
+#     plan: self host
 #     branch: main
 #     healthCheckPath:

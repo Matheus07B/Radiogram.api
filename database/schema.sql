@@ -1,10 +1,10 @@
 CREATE TABLE IF NOT EXISTS usuarios (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,    --
-    nome TEXT NOT NULL,                      --
-    email TEXT NOT NULL UNIQUE,              --
-    senha TEXT NOT NULL,                     --
-    userUUID TEXT,                           -- UUID implementado.
-    bio TEXT                                 --
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    nome TEXT NOT NULL,
+    email TEXT NOT NULL UNIQUE,
+    senha TEXT NOT NULL,
+    userUUID TEXT, -- UUID implementado.
+    bio TEXT -- bio do usuario.
 );
 
 CREATE TABLE IF NOT EXISTS friendships (
@@ -19,19 +19,19 @@ CREATE TABLE IF NOT EXISTS friendMessages (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     sender_id INTEGER NOT NULL,
     receiver_id INTEGER NOT NULL,
-    message TEXT,                               -- Mensagem pode ser nula se for imagem
-    image TEXT,                                 -- Armazena a imagem como binário
-    time TEXT,
-    timestamp DATETIME DEFAULT CURRENT_TIMESTAMP,
+    message TEXT, -- Mensagem pode ser nula se for imagem
+    image TEXT, -- Armazena apenas o link da imagem.
+    time TEXT, -- Pega a hora de envio da mensagem pelo lado do cliente.
+    timestamp DATETIME DEFAULT CURRENT_TIMESTAMP, -- Aqui é pelo lado do servidor.
     FOREIGN KEY (sender_id) REFERENCES usuarios (id),
     FOREIGN KEY (receiver_id) REFERENCES usuarios (id)
 );
 
 CREATE TABLE IF NOT EXISTS rooms (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,                 -- ID único da sala
-    room_code TEXT NOT NULL UNIQUE,                       -- Código único da sala (pode ser um UUID ou um número)
-    user1_id INTEGER NOT NULL,                            -- ID do primeiro usuário
-    user2_id INTEGER NOT NULL,                            -- ID do segundo usuário
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    room_code TEXT NOT NULL UNIQUE, -- Código único da sala (pode ser um UUID ou um número)
+    user1_id INTEGER NOT NULL,
+    user2_id INTEGER NOT NULL,
     FOREIGN KEY (user1_id) REFERENCES usuarios(id),
     FOREIGN KEY (user2_id) REFERENCES usuarios(id)
 );

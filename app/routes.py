@@ -4,7 +4,6 @@ from flask import jsonify
 
 # connection routes
 from app.ping.connection import connection_blueprint
-from app.ping.helloworld import helloworld_blueprint
 from app.ping.email import email_blueprint
 
 # main routes
@@ -22,7 +21,6 @@ def register_routes(app):
 
     # rota de conexão aqui
     app.register_blueprint(email_blueprint, url_prefix='/email')
-    app.register_blueprint(helloworld_blueprint, url_prefix='/helloworld')
     app.register_blueprint(connection_blueprint, url_prefix='/connection')
 
     # autenticação aqui
@@ -41,23 +39,7 @@ def register_routes(app):
     app.register_blueprint(chat_blueprint, url_prefix='/chat')
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+"""=========================="""
 
 
 """
