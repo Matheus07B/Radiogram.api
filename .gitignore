@@ -1,9 +1,9 @@
-# Arquivos de configuração e ambiente
+# Arquivos de configuração e ambiente - 1
 .env
 .vscode/
 .git/
 
-# Banco de dados
+# Banco de dados 
 *.db
 database.db
 
@@ -19,7 +19,7 @@ tmp/
 logs/
 
 # Dependências e pacotes
-venv/ 
+venv/
 *.egg-info/
 dist/
 build/
