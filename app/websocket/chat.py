@@ -16,6 +16,7 @@ chat_blueprint = Blueprint('chat', __name__)  # Definição do Blueprint
 
 users_rooms = {}  # Mapeia SID do usuário para sua sala atual
 
+# Entra na sala
 @socketio.on('join')
 def handle_join(data):
     username = data['username']
@@ -31,6 +32,7 @@ def handle_join(data):
     join_room(new_room)
     print(f"Usuário {username} entrou na sala {new_room}")
 
+# Sai da sala
 @socketio.on('leave')
 def handle_leave(data):
     sid = request.sid
@@ -41,7 +43,8 @@ def handle_leave(data):
         del users_rooms[sid]
         print(f"Usuário {sid} saiu manualmente da sala {room}")
 
-# Emissão de mensagens.
+# EMITS de mensagens e etc. ================================================
+# mensagens
 @socketio.on('message')
 def handle_message(data):
     room = data['room']
@@ -61,7 +64,7 @@ def handle_message(data):
         "sender": request.sid
     }, room=room)
 
-# Emissão de fotos.
+# fotos.
 # Configuração do backend de armazenamento
 STORAGE_API_URL = "https://cloud-personal.onrender.com/upload"
 
@@ -115,23 +118,37 @@ def handle_image(data):
     except Exception as e:
         print(f"Erro no processamento da imagem: {e}")
 
-# Emissão de documentos.
 @socketio.on('document')
 def handle_document(data):
-    room = data['room']
-    document_data = data['document']
-    time = data.get('time', "Horário desconhecido")  # Pega o horário ou usa um padrão
-    
-    print(f"Documento recebido na sala {room} às {time}")
+    try:
+        room = data['room']
+        document_data = data['document']
+        file_name = data.get('name', 'document')  # Get filename or use default
+        file_type = data.get('type', 'application/octet-stream')  # Get file type or use default
+        sender_id = data.get('sender_id')
+        friend_id = data.get('friend_id')
+        time = data.get('time', "Horário desconhecido")
+        
+        print(f"Documento recebido na sala {room} às {time}")
+        print(f"Tipo: {file_type}, Tamanho: {len(document_data)} bytes")
 
-    # Reenvia para todos os clientes na sala
-    socketio.emit("document", {
-        "room": room,
-        "document": document_data,
-        "time": time,
-        "sender": request.sid
-    }, room=room)
-
+        # Broadcast to all clients in the room with additional metadata
+        socketio.emit("document", {
+            "room": room,
+            "document": document_data,
+            "name": file_name,
+            "type": file_type,
+            "sender": request.sid,
+            "sender_id": sender_id,
+            "friend_id": friend_id,
+            "time": time
+        }, room=room)
+        
+    except KeyError as e:
+        print(f"Erro: Campo faltando nos dados do documento - {str(e)}")
+    except Exception as e:
+        print(f"Erro ao processar documento: {str(e)}")
+# ================================================
 
 # Criar a aplicação e rodar o WebSocket
 # if __name__ == "__main__":

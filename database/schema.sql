@@ -21,6 +21,8 @@ CREATE TABLE IF NOT EXISTS friendMessages (
     receiver_id INTEGER NOT NULL,
     message TEXT,                               -- Mensagem pode ser nula se for imagem
     image TEXT,                                 -- Armazena a imagem como binário
+    video TEXT,
+    document TEXT,
     time TEXT,
     timestamp DATETIME DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (sender_id) REFERENCES usuarios (id),
