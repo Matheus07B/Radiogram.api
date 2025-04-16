@@ -1,4 +1,4 @@
-# Radiogram API - wsl
+# Radiogram API
 
 A **Radiogram API** é a API responsável pelo funcionamento do **Radiogram**. Como uma API, ela permite que múltiplas plataformas se conectem a ela, oferecendo funcionalidades essenciais para a comunicação no sistema.
 
