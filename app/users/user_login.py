@@ -34,7 +34,7 @@ def login():
         token = jwt.encode(payload, SECRET_KEY, algorithm='HS256')
         return jsonify({"mensagem": "Login realizado com sucesso!", "token": token})
     else:
-        return jsonify({"erro": "Credenciais inválidas"}), 401
+        return jsonify({"erro": "Email ou senha incorretos!"}), 401
 
 # if __name__ == '__main__':
 #     print(f"SECRET_KEY: {repr(Config.SECRET_KEY)}")  # Mostra o valor e tipo da chave
