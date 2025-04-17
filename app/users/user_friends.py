@@ -57,22 +57,19 @@ def list_friends():
 
 @friends_blueprint.route('/list/selected', methods=['GET'])
 def select_friend_chat():
-    # Obter o token do cabeçalho Authorization
+    # Verificação do token (mantido igual)
     auth_header = request.headers.get('Authorization')
-    if not auth_header:
-        return jsonify({"error": "Token de autorização é obrigatório"}), 401
-
-    if not auth_header.startswith("Bearer "):
-        return jsonify({"error": "Formato de token inválido"}), 401
+    if not auth_header or not auth_header.startswith("Bearer "):
+        return jsonify({"error": "Token inválido ou faltando"}), 401
 
     try:
         token = auth_header.split(" ")[1]
         payload = jwt.decode(token, Config.SECRET_KEY, algorithms=["HS256"])
         user_id = payload.get("user_id")
         if not user_id:
-            return jsonify({"error": "Token inválido: user_id não encontrado"}), 401
+            return jsonify({"error": "Token inválido"}), 401
     except jwt.ExpiredSignatureError:
-        return jsonify({"error": "Token expirou"}), 401
+        return jsonify({"error": "Token expirado"}), 401
     except jwt.InvalidTokenError:
         return jsonify({"error": "Token inválido"}), 401
 
@@ -80,37 +77,56 @@ def select_friend_chat():
     if not friend_id:
         return jsonify({"error": "friend_id é obrigatório"}), 400
 
-    # Conectar ao banco e configurar cursor para dicionário
     conn = get_db_connection()
-    conn.row_factory = sqlite3.Row  # Permite acessar os dados por chave (nome da coluna)
+    conn.row_factory = sqlite3.Row
     cursor = conn.cursor()
 
-    cursor.execute(
-        '''
-        SELECT m.id, m.message, m.image, m.time, m.sender_id, m.receiver_id
-        FROM friendMessages m
-        WHERE (m.sender_id = ? AND m.receiver_id = ?)
-           OR (m.sender_id = ? AND m.receiver_id = ?)
-        ORDER BY m.timestamp
-        ''', (user_id, friend_id, friend_id, user_id)
-    )
-    messages = cursor.fetchall()
-    conn.close()
+    try:
+        # Consulta simplificada (somente campo document)
+        cursor.execute(
+            '''
+            SELECT 
+                m.id, 
+                m.message, 
+                m.image, 
+                m.document,
+                m.time, 
+                m.sender_id, 
+                m.receiver_id
+            FROM friendMessages m
+            WHERE (m.sender_id = ? AND m.receiver_id = ?)
+               OR (m.sender_id = ? AND m.receiver_id = ?)
+            ORDER BY m.time
+            ''', (user_id, friend_id, friend_id, user_id)
+        )
+        messages = cursor.fetchall()
 
-    # Converter os resultados para JSON
-    messages_data = []
-    for message in messages:
-        messages_data.append({
-            "id": message["id"],
-            "message": message["message"],
-            "image_url": f"{message['image']}" if message["image"] else None,
-            "time": message["time"],
-            "sender_id": message["sender_id"],
-            "receiver_id": message["receiver_id"]
-        })
+        messages_data = []
+        for message in messages:
+            msg_data = {
+                "id": message["id"],
+                "message": message["message"],
+                "time": message["time"],
+                "sender_id": message["sender_id"],
+                "receiver_id": message["receiver_id"]
+            }
 
-    return jsonify({"messages": messages_data}), 200
+            if message["image"]:
+                msg_data["image_url"] = f"{message['image']}"
+            
+            if message["document"]:
+                msg_data["document"] = message["document"]  # Apenas a URL
 
+            messages_data.append(msg_data)
+
+        return jsonify({"messages": messages_data}), 200
+
+    except Exception as e:
+        print(f"Erro no banco de dados: {str(e)}")
+        return jsonify({"error": "Erro interno"}), 500
+
+    finally:
+        conn.close()
 
 # Remover aqui caso necessario.
 @friends_blueprint.route('/list/last', methods=['GET'])

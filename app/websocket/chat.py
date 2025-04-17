@@ -16,6 +16,9 @@ chat_blueprint = Blueprint('chat', __name__)  # Definição do Blueprint
 
 users_rooms = {}  # Mapeia SID do usuário para sua sala atual
 
+# Configuração do backend de armazenamento
+STORAGE_API_URL = "https://cloud-personal.onrender.com/upload"
+
 # Entra na sala
 @socketio.on('join')
 def handle_join(data):
@@ -44,7 +47,7 @@ def handle_leave(data):
         print(f"Usuário {sid} saiu manualmente da sala {room}")
 
 # EMITS de mensagens e etc. ================================================
-# mensagens
+# Mensagens
 @socketio.on('message')
 def handle_message(data):
     room = data['room']
@@ -64,10 +67,7 @@ def handle_message(data):
         "sender": request.sid
     }, room=room)
 
-# fotos.
-# Configuração do backend de armazenamento
-STORAGE_API_URL = "https://cloud-personal.onrender.com/upload"
-
+# Fotos.
 @socketio.on('image')
 def handle_image(data):
     room = data['room']
@@ -118,154 +118,113 @@ def handle_image(data):
     except Exception as e:
         print(f"Erro no processamento da imagem: {e}")
 
+# Videos.
+@socketio.on('video')
+def handle_video(data):
+    room = data['room']
+    video_base64 = data['video']
+    senderID = data['sender_id']
+    friendID = data['friend_id']
+    time = data.get('time', "Horário desconhecido")
+
+    try:
+        # Emissão imediata para visualização temporária
+        socketio.emit("video", {
+            "room": room,
+            "video": video_base64,
+            "time": time,
+            "sender": request.sid,
+            "sender_id": senderID,
+            "friend_id": friendID
+        }, room=room)
+
+        print(f"Vídeo recebido na sala {room}")
+
+        # Decodificação e preparação do arquivo
+        video_data = base64.b64decode(video_base64.split(',')[1])
+        files = {'file': ('video_message.mp4', BytesIO(video_data))}  # Nome genérico
+
+        # Upload para armazenamento
+        response = requests.post(STORAGE_API_URL, files=files)
+
+        if response.status_code == 200:
+            video_url = response.json().get("url")
+            
+            # Persistência no banco (estrutura mínima)
+            cursor = get_db_connection()
+            cursor.execute(
+                "INSERT INTO friendMessages (video, time, sender_id, receiver_id) VALUES (?, ?, ?, ?)",
+                (video_url, time, senderID, friendID)
+            )
+            cursor.commit()
+            cursor.close()
+
+            print(f"Vídeo armazenado: {video_url}")
+
+    except Exception as e:
+        print(f"Erro no vídeo: {str(e)}")
+        socketio.emit('video_error', {
+            'message': 'Falha no processamento',
+            'room': room
+        }, room=room)
+
+# Documentos
 @socketio.on('document')
 def handle_document(data):
     try:
         room = data['room']
-        document_data = data['document']
-        file_name = data.get('name', 'document')  # Get filename or use default
-        file_type = data.get('type', 'application/octet-stream')  # Get file type or use default
+        document_base64 = data['document']
+        file_name = data.get('name', 'document')
+        file_type = data.get('type', 'application/octet-stream')
         sender_id = data.get('sender_id')
         friend_id = data.get('friend_id')
         time = data.get('time', "Horário desconhecido")
-        
-        print(f"Documento recebido na sala {room} às {time}")
-        print(f"Tipo: {file_type}, Tamanho: {len(document_data)} bytes")
 
-        # Broadcast to all clients in the room with additional metadata
+        # Emissão imediata para os clientes (antes do upload para a nuvem)
         socketio.emit("document", {
             "room": room,
-            "document": document_data,
+            "document": document_base64,
             "name": file_name,
             "type": file_type,
+            "time": time,
             "sender": request.sid,
             "sender_id": sender_id,
-            "friend_id": friend_id,
-            "time": time
+            "friend_id": friend_id
         }, room=room)
-        
+
+        print(f"Documento recebido na sala {room} às {time}")
+
+        # Decodificar o documento base64
+        document_data = base64.b64decode(document_base64.split(',')[1])
+        files = {'file': (file_name, BytesIO(document_data), file_type)}
+
+        # Enviar para o backend de armazenamento
+        response = requests.post(STORAGE_API_URL, files=files)
+
+        if response.status_code == 200:
+            uploaded_doc_url = response.json().get("url")
+
+            # Salvar no banco de dados
+            cursor = get_db_connection()
+            query = """INSERT INTO friendMessages(document, time, sender_id, receiver_id) VALUES (?, ?, ?, ?)"""
+            cursor.execute(query, (uploaded_doc_url, time, sender_id, friend_id))
+            cursor.commit()
+            cursor.close()
+
+            print(f"Documento armazenado com sucesso: {uploaded_doc_url}")
+
+        else:
+            print(f"Erro no upload do documento: {response.text}")
+
     except KeyError as e:
-        print(f"Erro: Campo faltando nos dados do documento - {str(e)}")
+        print(f"Campo obrigatório faltando: {str(e)}")
     except Exception as e:
-        print(f"Erro ao processar documento: {str(e)}")
+        print(f"Erro no processamento do documento: {str(e)}")
+        import traceback
+        traceback.print_exc()
 # ================================================
 
 # Criar a aplicação e rodar o WebSocket
 # if __name__ == "__main__":
 #     app, socketio = create_app()
 #     socketio.run(app, host="127.0.0.1", port=5001, debug=True)
-
-
-
-################################################################
-
-# from flask import Flask, Blueprint, request, jsonify
-# from flask_socketio import SocketIO, send, emit, join_room, leave_room
-# from flask_cors import CORS
-# import os
-
-# app = Flask(__name__)
-
-# web_chat_blueprint = Blueprint('web_chat', __name__)
-# SECRET_KEY = os.environ.get("SECRET_KEY", "minha-chave-secreta")
-
-# CORS(app)  # Permitir origens diferentes (se necessário)
-
-# # Configurar SocketIO para permitir CORS
-# socketio = SocketIO(app, cors_allowed_origins="*")  # "*" permite todas as origens
-
-# # Rota principal para o site
-# @web_chat_blueprint.route('')
-# def index():
-#     return "Servidor WebSocket em execução"
-
-# # Evento de conexão
-# @socketio.on('connect', namespace='/web_chat')
-# def handle_connect():
-#     print("Cliente conectado")
-
-# # Evento de desconexão
-# @socketio.on('disconnect')
-# def handle_disconnect():
-#     print("Cliente desconectado")
-
-# # Receber e enviar mensagens para todos
-# @socketio.on('message')
-# def handle_message(data):
-#     print(f"Mensagem recebida: {data}")
-#     send(data, broadcast=True)  # Envia a mensagem para todos os clientes conectados
-
-# # Sistema de salas (para chats privados ou grupos)
-# @socketio.on('join')
-# def handle_join(data):
-#     room = data['room']
-#     join_room(room)
-#     emit('message', f"Entrou na sala: {room}", room=room)
-
-# @socketio.on('leave')
-# def handle_leave(data):
-#     room = data['room']
-#     leave_room(room)
-#     emit('message', f"Saiu da sala: {room}", room=room)
-
-# if __name__ == '__main__':
-#     socketio.run(app, debug=True, host="0.0.0.0", port=5001)
-
-
-#############################################################################################
-
-
-# from flask import Flask, request, jsonify
-# from flask_socketio import SocketIO, send, emit, join_room, leave_room
-# from flask_cors import CORS
-
-# app = Flask(__name__)
-# app.config['SECRET_KEY'] = 'sua_chave_secreta'  # Defina uma chave secreta para a sessão
-# CORS(app)  # Permitir origens diferentes (se necessário)
-
-# # Configurar SocketIO para permitir CORS
-# socketio = SocketIO(app, cors_allowed_origins="*")  # "*" permite todas as origens
-
-# # Rota principal para verificação
-# @app.route('/')
-# def index():
-#     return jsonify({"message": "API WebSocket ativa e em execução"}), 200
-
-# # Rota adicional para teste (HTTP)
-# @app.route('/api/test', methods=['GET'])
-# def test_api():
-#     return jsonify({"message": "Esta é uma rota de teste HTTP"}), 200
-
-# # WebSocket: evento de conexão
-# @socketio.on('connect')
-# def handle_connect():
-#     print("Cliente conectado")
-#     emit('message', {"message": "Bem-vindo ao servidor WebSocket!"})
-
-# # WebSocket: evento de desconexão
-# @socketio.on('disconnect')
-# def handle_disconnect():
-#     print("Cliente desconectado")
-
-# # WebSocket: evento para mensagens de broadcast
-# @socketio.on('message')
-# def handle_message(data):
-#     print(f"Mensagem recebida: {data}")
-#     send({"message": data.get("message", ""), "user": data.get("user", "Anon")}, broadcast=True)
-
-# # WebSocket: gerenciar salas de chat
-# @socketio.on('join')
-# def handle_join(data):
-#     room = data['room']
-#     join_room(room)
-#     emit('message', {"message": f"Entrou na sala: {room}", "user": data.get("user", "Anon")}, room=room)
-
-# @socketio.on('leave')
-# def handle_leave(data):
-#     room = data['room']
-#     leave_room(room)
-#     emit('message', {"message": f"Saiu da sala: {room}", "user": data.get("user", "Anon")}, room=room)
-
-# # Iniciar servidor
-# if __name__ == '__main__':
-#     socketio.run(app, debug=True, host="127.0.0.1", port=5001)
