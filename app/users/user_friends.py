@@ -96,7 +96,7 @@ def select_friend_chat():
             FROM friendMessages m
             WHERE (m.sender_id = ? AND m.receiver_id = ?)
                OR (m.sender_id = ? AND m.receiver_id = ?)
-            ORDER BY m.time
+            ORDER BY m.timestamp
             ''', (user_id, friend_id, friend_id, user_id)
         )
         messages = cursor.fetchall()
