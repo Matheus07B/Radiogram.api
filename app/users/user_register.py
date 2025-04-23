@@ -14,8 +14,9 @@ SECRET_KEY = os.environ.get("SECRET_KEY")
 def register():
     dados = request.json
     nome = dados.get('nome')
-    senha = dados.get('senha')
     email = dados.get('email')
+    telefone = dados.get('concatNum')
+    senha = dados.get('senha')
 
     if not nome or not senha or not email:
         return jsonify({"erro": "Nome, email e senha são obrigatórios"}), 400
@@ -34,8 +35,8 @@ def register():
 
     try:
         cursor.execute(
-            'INSERT INTO usuarios (nome, senha, email, userUUID) VALUES (?, ?, ?, ?)',
-            (nome, senha_criptografada, email, user_uuid)
+            'INSERT INTO usuarios (nome, email, telefone, senha, userUUID) VALUES (?, ?, ?, ?, ?)',
+            (nome, email, telefone, senha_criptografada, user_uuid)
         )
         conn.commit()
     finally:
