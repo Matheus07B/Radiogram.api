@@ -1,3 +1,4 @@
+import os
 import smtplib
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
@@ -6,7 +7,7 @@ def enviar_email(email_destinatario, codigo):
     smtp_server = "smtp.gmail.com"
     smtp_port = 587
     email_sender = "matheusveneski654@gmail.com"
-    email_password = "tfaz ovlq rgnb sskq" # colocar no env dps.
+    email_password = os.getenv("EMAIL_KEY")
 
     subject = "Código de Recuperação"
     body = f"Seu código de recuperação é: {codigo}"
