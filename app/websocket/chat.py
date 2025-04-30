@@ -77,15 +77,6 @@ def handle_image(data):
     time = data.get('time', "Horário desconhecido")
 
     try:
-        # Emissão para os clientes antes de enviar para o armazenamento
-        # Assim, não fica esperando pela resposta do servidor de imagens
-        socketio.emit("image", {
-            "room": room,
-            "image": image_base64,  # URL pública da imagem armazenada (temporária por enquanto)
-            "time": time,
-            "sender": request.sid
-        }, room=room)
-
         print(f"Imagem recebida na sala {room} às {time}")
 
         # Decodificar a imagem base64
@@ -97,6 +88,13 @@ def handle_image(data):
 
         if response.status_code == 200:
             uploaded_image_url = response.json().get("url")  # URL gerada no backend
+
+            socketio.emit("image", {
+                "room": room,
+                "image": uploaded_image_url,  # URL pública da imagem armazenada (temporária por enquanto)
+                "time": time,
+                "sender": request.sid
+            }, room=room)
 
             # Conectar ao banco de dados
             cursor = get_db_connection()
@@ -128,16 +126,6 @@ def handle_video(data):
     time = data.get('time', "Horário desconhecido")
 
     try:
-        # Emissão imediata para visualização temporária
-        socketio.emit("video", {
-            "room": room,
-            "video": video_base64,
-            "time": time,
-            "sender": request.sid,
-            "sender_id": senderID,
-            "friend_id": friendID
-        }, room=room)
-
         print(f"Vídeo recebido na sala {room}")
 
         # Decodificação e preparação do arquivo
@@ -149,7 +137,17 @@ def handle_video(data):
 
         if response.status_code == 200:
             video_url = response.json().get("url")
-            
+
+            # Emissão após o update do video na cloud.
+            socketio.emit("video", {
+                "room": room,
+                "video": video_url,
+                "time": time,
+                "sender": request.sid,
+                "sender_id": senderID,
+                "friend_id": friendID
+            }, room=room)
+
             # Persistência no banco (estrutura mínima)
             cursor = get_db_connection()
             cursor.execute(
@@ -180,18 +178,6 @@ def handle_document(data):
         friend_id = data.get('friend_id')
         time = data.get('time', "Horário desconhecido")
 
-        # Emissão imediata para os clientes (antes do upload para a nuvem)
-        socketio.emit("document", {
-            "room": room,
-            "document": document_base64,
-            "name": file_name,
-            "type": file_type,
-            "time": time,
-            "sender": request.sid,
-            "sender_id": sender_id,
-            "friend_id": friend_id
-        }, room=room)
-
         print(f"Documento recebido na sala {room} às {time}")
 
         # Decodificar o documento base64
@@ -203,6 +189,17 @@ def handle_document(data):
 
         if response.status_code == 200:
             uploaded_doc_url = response.json().get("url")
+
+            socketio.emit("document", {
+                "room": room,
+                "document": document_base64,
+                "name": file_name,
+                "type": file_type,
+                "time": time,
+                "sender": request.sid,
+                "sender_id": sender_id,
+                "friend_id": friend_id
+            }, room=room)
 
             # Salvar no banco de dados
             cursor = get_db_connection()
