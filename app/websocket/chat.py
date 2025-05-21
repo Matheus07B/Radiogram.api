@@ -17,7 +17,7 @@ chat_blueprint = Blueprint('chat', __name__)  # Definição do Blueprint
 users_rooms = {}  # Mapeia SID do usuário para sua sala atual
 
 # Configuração do backend de armazenamento
-STORAGE_API_URL = "https://cloud-personal.onrender.com/upload"
+STORAGE_API_URL = "https://cloud-personal.onrender.com/upload" # Colocar no Os depois
 
 # Entra na sala
 @socketio.on('join')

@@ -1,2 +1,7 @@
 # Inserir mensagem na tabela de mensagens.
 insert into friendMessages (sender_id, receiver_id, message, room) values (1, 2, 'Tudo certo com você?', 'sala1');
+
+# Adcionar amigos
+INSERT INTO friendships (user_id, friend_id) VALUES
+(1, 2),
+(2, 1);
