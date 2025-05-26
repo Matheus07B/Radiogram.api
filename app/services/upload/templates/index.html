@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8">
+  <title>Enviar Arquivo</title>
+  <style>
+    body {
+      font-family: sans-serif;
+      padding: 40px;
+    }
+    input[type="file"] {
+      margin-bottom: 10px;
+    }
+    progress {
+      width: 100%;
+      height: 20px;
+    }
+  </style>
+</head>
+<body>
+  <h1>Enviar Arquivo</h1>
+  <form id="uploadForm">
+    <input type="file" name="file" id="fileInput" required>
+    <br>
+    <progress id="progressBar" value="0" max="100"></progress>
+    <br><br>
+    <button type="submit">Enviar</button>
+  </form>
+
+  <div id="result"></div>
+
+  <script>
+    const form = document.getElementById('uploadForm');
+    const fileInput = document.getElementById('fileInput');
+    const progressBar = document.getElementById('progressBar');
+    const resultDiv = document.getElementById('result');
+
+    form.addEventListener('submit', function(e) {
+      e.preventDefault();
+      const file = fileInput.files[0];
+      const formData = new FormData();
+      formData.append('file', file);
+
+      const xhr = new XMLHttpRequest();
+      xhr.open('POST', 'https://api.radiogram.shop/upload/upload', true);
+
+      xhr.upload.onprogress = function(e) {
+        if (e.lengthComputable) {
+          const percent = (e.loaded / e.total) * 100;
+          progressBar.value = percent;
+        }
+      };
+
+      xhr.onload = function() {
+        if (xhr.status === 200) {
+          resultDiv.innerHTML = xhr.responseText;
+        } else {
+          resultDiv.innerHTML = "Erro ao enviar arquivo.";
+        }
+      };
+
+      xhr.send(formData);
+    });
+  </script>
+</body>
+</html>

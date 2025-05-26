@@ -3,6 +3,9 @@
 import base64
 import requests
 import sqlite3
+import uuid
+import hashlib
+import os
 
 from datetime import datetime
 from io import BytesIO
@@ -18,6 +21,13 @@ users_rooms = {}  # Mapeia SID do usuário para sua sala atual
 
 # Configuração do backend de armazenamento
 STORAGE_API_URL = "https://cloud-personal.onrender.com/upload" # Colocar no Os depois
+
+def generate_unique_filename(filename):
+    """Gera um nome único baseado em UUID + hash"""
+    ext = os.path.splitext(filename)[1]  # Pega a extensão original
+    unique_id = str(uuid.uuid4())  # Gera um UUID único
+    hash_part = hashlib.sha256(unique_id.encode()).hexdigest()[:16]  # Hash de 16 caracteres
+    return f"{unique_id}_{hash_part}{ext}"  # Ex: 550e8400-e29b-41d4-a716_4f3c2a8e9b1d.jpg"
 
 # Entra na sala
 @socketio.on('join')
@@ -71,7 +81,7 @@ def handle_message(data):
 @socketio.on('image')
 def handle_image(data):
     room = data['room']
-    image_base64 = data['image']  # Imagem recebida em base64
+    image = data['image']  # Imagem recebida em base64
     senderID = data['sender_id']
     friendID = data['friend_id']
     time = data.get('time', "Horário desconhecido")
@@ -79,39 +89,43 @@ def handle_image(data):
     try:
         print(f"Imagem recebida na sala {room} às {time}")
 
-        # Decodificar a imagem base64
-        image_data = base64.b64decode(image_base64.split(',')[1])  # Remove o prefixo 'data:image/...;base64,'
-        files = {'file': ('image.png', BytesIO(image_data), 'image/png')}
+        # # Decodificar a imagem base64
+        # image_data = base64.b64decode(image_base64.split(',')[1])  # Remove o prefixo 'data:image/...;base64,'
+        # files = {'file': ('image.png', BytesIO(image_data), 'image/png')}
 
-        # Enviar para o backend (armazenar a imagem na nuvem)
-        response = requests.post(STORAGE_API_URL, files=files)
+        # # Enviar para o backend (armazenar a imagem na nuvem)
+        # response = requests.post(STORAGE_API_URL, files=files)
 
-        if response.status_code == 200:
-            uploaded_image_url = response.json().get("url")  # URL gerada no backend
+        # if response.status_code == 200:
+        #     uploaded_image_url = response.json().get("url")  # URL gerada no backend
 
-            socketio.emit("image", {
-                "room": room,
-                "image": uploaded_image_url,  # URL pública da imagem armazenada (temporária por enquanto)
-                "time": time,
-                "sender": request.sid
-            }, room=room)
+        # crypt_image = "https://api.radiogram.shop/upload/download/"+generate_unique_filename(image)
+        # print("TESTEEEEEEEEEEEEE - "+ crypt_image) # Somente para debug
 
-            # Conectar ao banco de dados
-            cursor = get_db_connection()
+        socketio.emit("image", {
+            "room": room,
+            "image": image,  # URL pública da imagem armazenada (temporária por enquanto)
+            "time": time,
+            "sender": request.sid
+        }, room=room)
 
-            # Query de inserção
-            query = "INSERT INTO friendMessages (image, time, sender_id, receiver_id) VALUES (?, ?, ?, ?)"
-            data = (uploaded_image_url, time, senderID, friendID)
 
-            # Executar a query para salvar a imagem no banco de dados
-            cursor.execute(query, data)
-            cursor.commit()
-            cursor.close()
+        # Conectar ao banco de dados
+        cursor = get_db_connection()
 
-            print("Imagem inserida com sucesso, link: " + uploaded_image_url)
+        # Query de inserção
+        query = "INSERT INTO friendMessages (image, time, sender_id, receiver_id) VALUES (?, ?, ?, ?)"
+        data = (image, time, senderID, friendID)
 
-        else:
-            print(f"Erro ao fazer upload da imagem: {response.text}")
+        # Executar a query para salvar a imagem no banco de dados
+        cursor.execute(query, data)
+        cursor.commit()
+        cursor.close()
+
+        print(f"Imagem armazenado: {image}")
+
+    # else:
+    #     print(f"Erro ao fazer upload da imagem: {response.text}")
 
     except Exception as e:
         print(f"Erro no processamento da imagem: {e}")
@@ -120,7 +134,7 @@ def handle_image(data):
 @socketio.on('video')
 def handle_video(data):
     room = data['room']
-    video_base64 = data['video']
+    video = data['video']
     senderID = data['sender_id']
     friendID = data['friend_id']
     time = data.get('time', "Horário desconhecido")
@@ -129,35 +143,37 @@ def handle_video(data):
         print(f"Vídeo recebido na sala {room}")
 
         # Decodificação e preparação do arquivo
-        video_data = base64.b64decode(video_base64.split(',')[1])
-        files = {'file': ('video_message.mp4', BytesIO(video_data))}  # Nome genérico
+        # video_data = base64.b64decode(video_base64.split(',')[1])
+        # files = {'file': ('video_message.mp4', BytesIO(video_data))}  # Nome genérico
 
-        # Upload para armazenamento
-        response = requests.post(STORAGE_API_URL, files=files)
+        # # Upload para armazenamento
+        # response = requests.post(STORAGE_API_URL, files=files)
 
-        if response.status_code == 200:
-            video_url = response.json().get("url")
+        # if response.status_code == 200:
+        #     video_url = response.json().get("url")
 
-            # Emissão após o update do video na cloud.
-            socketio.emit("video", {
-                "room": room,
-                "video": video_url,
-                "time": time,
-                "sender": request.sid,
-                "sender_id": senderID,
-                "friend_id": friendID
-            }, room=room)
+        # crypt_video = generate_unique_filename(video)
 
-            # Persistência no banco (estrutura mínima)
-            cursor = get_db_connection()
-            cursor.execute(
-                "INSERT INTO friendMessages (video, time, sender_id, receiver_id) VALUES (?, ?, ?, ?)",
-                (video_url, time, senderID, friendID)
-            )
-            cursor.commit()
-            cursor.close()
+        # Emissão após o update do video na cloud.
+        socketio.emit("video", {
+            "room": room,
+            "video": video,
+            "time": time,
+            "sender": request.sid,
+            "sender_id": senderID,
+            "friend_id": friendID
+        }, room=room)
 
-            print(f"Vídeo armazenado: {video_url}")
+        # Persistência no banco (estrutura mínima)
+        cursor = get_db_connection()
+        cursor.execute(
+            "INSERT INTO friendMessages (video, time, sender_id, receiver_id) VALUES (?, ?, ?, ?)",
+            (video, time, senderID, friendID)
+        )
+        cursor.commit()
+        cursor.close()
+
+        print(f"Vídeo armazenado: {video}")
 
     except Exception as e:
         print(f"Erro no vídeo: {str(e)}")
@@ -171,47 +187,45 @@ def handle_video(data):
 def handle_document(data):
     try:
         room = data['room']
-        document_base64 = data['document']
-        file_name = data.get('name', 'document')
-        file_type = data.get('type', 'application/octet-stream')
+        document = data['document']
         sender_id = data.get('sender_id')
         friend_id = data.get('friend_id')
         time = data.get('time', "Horário desconhecido")
 
         print(f"Documento recebido na sala {room} às {time}")
 
-        # Decodificar o documento base64
-        document_data = base64.b64decode(document_base64.split(',')[1])
-        files = {'file': (file_name, BytesIO(document_data), file_type)}
+        # # Decodificar o documento base64
+        # document_data = base64.b64decode(document_base64.split(',')[1])
+        # files = {'file': (file_name, BytesIO(document_data), file_type)}
 
         # Enviar para o backend de armazenamento
-        response = requests.post(STORAGE_API_URL, files=files)
+        # response = requests.post(STORAGE_API_URL, files=files)
 
-        if response.status_code == 200:
-            uploaded_doc_url = response.json().get("url")
+        # if response.status_code == 200:
+        #     uploaded_doc_url = response.json().get("url")
 
-            socketio.emit("document", {
-                "room": room,
-                "document": document_base64,
-                "name": file_name,
-                "type": file_type,
-                "time": time,
-                "sender": request.sid,
-                "sender_id": sender_id,
-                "friend_id": friend_id
-            }, room=room)
+        document = generate_unique_filename(document)
 
-            # Salvar no banco de dados
-            cursor = get_db_connection()
-            query = """INSERT INTO friendMessages(document, time, sender_id, receiver_id) VALUES (?, ?, ?, ?)"""
-            cursor.execute(query, (uploaded_doc_url, time, sender_id, friend_id))
-            cursor.commit()
-            cursor.close()
+        socketio.emit("document", {
+            "room": room,
+            "document": document,
+            "time": time,
+            "sender": request.sid,
+            "sender_id": sender_id,
+            "friend_id": friend_id
+        }, room=room)
 
-            print(f"Documento armazenado com sucesso: {uploaded_doc_url}")
+        # Salvar no banco de dados
+        cursor = get_db_connection()
+        query = """INSERT INTO friendMessages(document, time, sender_id, receiver_id) VALUES (?, ?, ?, ?)"""
+        cursor.execute(query, (document, time, sender_id, friend_id))
+        cursor.commit()
+        cursor.close()
 
-        else:
-            print(f"Erro no upload do documento: {response.text}")
+        print(f"Documento armazenado com sucesso: {document}")
+
+        # else:
+        #     print(f"Erro no upload do documento: {response.text}")
 
     except KeyError as e:
         print(f"Campo obrigatório faltando: {str(e)}")

@@ -38,3 +38,9 @@ CREATE TABLE IF NOT EXISTS rooms (
     FOREIGN KEY (user1_id) REFERENCES usuarios(id),
     FOREIGN KEY (user2_id) REFERENCES usuarios(id)
 );
+
+CREATE TABLE IF NOT EXISTS recoverCodes (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    email TEXT NOT NULL UNIQUE,
+    code TEXT NOT NULL
+)

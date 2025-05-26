@@ -11,10 +11,14 @@ from app.ping.email import email_blueprint
 from app.users.user_login import login_blueprint
 from app.users.user_register import register_blueprint
 from app.users.user_friends import friends_blueprint
-from app.users.recovery_account import recovery_blueprint
+from app.users.account.recovery_account import recovery_blueprint
+from app.users.account.verify_code import verify_recover_code_blueprint
 
 # websockets
 from app.websocket.chat import chat_blueprint
+
+# Upload
+from app.services.upload.upload_service import upload_blueprint
 
 def register_routes(app):
     # rota main aqui
@@ -36,27 +40,13 @@ def register_routes(app):
 
     # recuperar conta
     app.register_blueprint(recovery_blueprint, url_prefix='/recovery')
+    app.register_blueprint(verify_recover_code_blueprint, url_prefix='/verifycode')
 
     # Criação do websocket
     app.register_blueprint(chat_blueprint, url_prefix='/chat')
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+    # Upload
+    app.register_blueprint(upload_blueprint, url_prefix='/upload')
 
 
 

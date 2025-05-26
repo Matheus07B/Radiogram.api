@@ -89,6 +89,7 @@ def select_friend_chat():
                 m.id, 
                 m.message, 
                 m.image, 
+                m.video,
                 m.document,
                 m.time, 
                 m.sender_id, 
@@ -114,8 +115,11 @@ def select_friend_chat():
             if message["image"]:
                 msg_data["image_url"] = f"{message['image']}"
             
+            if message["video"]:
+                msg_data["video"] = f"{message['video']}"
+
             if message["document"]:
-                msg_data["document"] = message["document"]  # Apenas a URL
+                msg_data["document"] = message['document']  # Apenas a URL
 
             messages_data.append(msg_data)
 
