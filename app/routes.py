@@ -8,11 +8,13 @@ from app.ping.helloworld import helloworld_blueprint
 from app.ping.email import email_blueprint
 
 # main routes
-from app.users.user_login import login_blueprint
-from app.users.user_register import register_blueprint
+from app.users.authentication.user_login import login_blueprint
+from app.users.authentication.user_register import register_blueprint
 from app.users.user_friends import friends_blueprint
+
 from app.users.account.recovery_account import recovery_blueprint
 from app.users.account.verify_code import verify_recover_code_blueprint
+from app.users.account.change_password import change_password_blueprint
 
 # websockets
 from app.websocket.chat import chat_blueprint
@@ -41,6 +43,7 @@ def register_routes(app):
     # recuperar conta
     app.register_blueprint(recovery_blueprint, url_prefix='/recovery')
     app.register_blueprint(verify_recover_code_blueprint, url_prefix='/verifycode')
+    app.register_blueprint(change_password_blueprint, url_prefix='/changepassword')
 
     # Criação do websocket
     app.register_blueprint(chat_blueprint, url_prefix='/chat')

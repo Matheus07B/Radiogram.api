@@ -57,25 +57,48 @@ def handle_leave(data):
         print(f"Usuário {sid} saiu manualmente da sala {room}")
 
 # EMITS de mensagens e etc. ================================================
-# Mensagens
+# Mensagens.
 @socketio.on('message')
 def handle_message(data):
-    room = data['room']
-    message = data['message']
-    time = data['time']  # Pega o horário ou usa um padrão
+    try:
+        room = data.get('room')
+        message = data.get('message')
+        user_id = data.get('user_id')
+        friend_id = data.get('friend_id')
+        time = data.get('time')
 
-    # Só para debug.
-    # print(f"Mensagem na sala {room} às {time}: {message}")
+        # Debug simplificado (descomente se precisar)
+        # logging.debug(f"Mensagem na sala {room} às {time}: {message}")
 
-    print(room, message, time)
+        print(f"[{time}] Sala: {room} | De: {user_id} Para: {friend_id} | Mensagem: {message}")
 
-    # Envia a mensagem de volta para os clientes na sala
-    socketio.emit("message", {
-        "room": room,
-        "message": message,
-        "time": time,
-        "sender": request.sid
-    }, room=room)
+        # Envia a mensagem para todos na sala
+        socketio.emit("message", {
+            "room": room,
+            "message": message,
+            "time": time,
+            "sender": request.sid
+        }, room=room)
+
+        # Insere a mensagem no banco
+        conn = get_db_connection()
+        cursor = conn.cursor()
+
+        query = """
+            INSERT INTO friendMessages (message, time, sender_id, receiver_id)
+            VALUES (?, ?, ?, ?)
+        """
+        cursor.execute(query, (message, time, user_id, friend_id))
+        conn.commit()
+
+    except Exception as e:
+        print(f"Erro ao processar mensagem: {e}")
+    finally:
+        try:
+            cursor.close()
+            conn.close()
+        except Exception:
+            pass
 
 # Fotos.
 @socketio.on('image')
