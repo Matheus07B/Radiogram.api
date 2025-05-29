@@ -22,6 +22,9 @@ from app.websocket.chat import chat_blueprint
 # Upload
 from app.services.upload.upload_service import upload_blueprint
 
+# Add friend
+from app.users.friends.addFriend import add_friend_blueprint
+
 def register_routes(app):
     # rota main aqui
     # app.register_blueprint(main_blueprint, url_prefix='/')
@@ -50,8 +53,9 @@ def register_routes(app):
 
     # Upload
     app.register_blueprint(upload_blueprint, url_prefix='/upload')
-
-
+    
+    # Upload
+    app.register_blueprint(add_friend_blueprint, url_prefix='/addfriend')
 
 """
     # ====== Rotas diretas ======
