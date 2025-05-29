@@ -217,6 +217,7 @@ def handle_document(data):
         time = data.get('time', "Horário desconhecido")
 
         print(f"Documento recebido na sala {room} às {time}")
+        print(f"Nome do arquivo recebido: {fileNameEmit}")
 
         # # Decodificar o documento base64
         # document_data = base64.b64decode(document_base64.split(',')[1])
