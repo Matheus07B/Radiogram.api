@@ -22,12 +22,12 @@ def limit_file_size():
     if request.content_length is not None and request.content_length > MAX_CONTENT_LENGTH:
         abort(413, description="Arquivo excede o limite de 2 GB.")
 
-def generate_unique_filename(filename):
-    """Gera um nome único baseado em UUID + hash"""
-    ext = os.path.splitext(filename)[1]  # Pega a extensão original
-    unique_id = str(uuid.uuid4())  # Gera um UUID único
-    hash_part = hashlib.sha256(unique_id.encode()).hexdigest()[:16]  # Hash de 16 caracteres
-    return f"{unique_id}_{hash_part}{ext}"  # Ex: 550e8400-e29b-41d4-a716_4f3c2a8e9b1d.jpg"
+# def generate_unique_filename(filename):
+#     """Gera um nome único baseado em UUID + hash"""
+#     ext = os.path.splitext(filename)[1]  # Pega a extensão original
+#     unique_id = str(uuid.uuid4())  # Gera um UUID único
+#     hash_part = hashlib.sha256(unique_id.encode()).hexdigest()[:16]  # Hash de 16 caracteres
+#     return f"{unique_id}_{hash_part}{ext}"  # Ex: 550e8400-e29b-41d4-a716_4f3c2a8e9b1d.jpg"
 
 @upload_blueprint.route('/')
 def index():
@@ -43,7 +43,8 @@ def upload():
     if file.filename == '':
         return jsonify({"error": "Nome do arquivo inválido"}), 400
 
-    filename = secure_filename(file.filename)
+    # filename = secure_filename(file.filename)
+    filename = file.filename
     filepath = os.path.join(UPLOAD_FOLDER, filename)
     file.save(filepath)
 

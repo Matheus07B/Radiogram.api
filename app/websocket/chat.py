@@ -211,6 +211,7 @@ def handle_document(data):
     try:
         room = data['room']
         document = data['document']
+        fileNameEmit = data['fileNameEmit']
         sender_id = data.get('sender_id')
         friend_id = data.get('friend_id')
         time = data.get('time', "Horário desconhecido")
@@ -227,11 +228,12 @@ def handle_document(data):
         # if response.status_code == 200:
         #     uploaded_doc_url = response.json().get("url")
 
-        document = generate_unique_filename(document)
+        # document = generate_unique_filename(document)
 
         socketio.emit("document", {
             "room": room,
             "document": document,
+            "fileNameEmit": fileNameEmit,
             "time": time,
             "sender": request.sid,
             "sender_id": sender_id,
