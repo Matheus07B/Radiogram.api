@@ -1,11 +1,13 @@
-from flask import Blueprint, request, jsonify
-import bcrypt
-import jwt
-import uuid  # Importando para gerar UUID
-from datetime import datetime, timedelta
-from app.models.user_model import find_user_by_email
-from app.models.database import get_db_connection  # Certifique-se de importar corretamente a função
 import os
+import jwt
+import uuid
+import bcrypt
+
+from datetime import datetime, timedelta
+from flask import Blueprint, request, jsonify
+from app.models.database import get_db_connection
+from app.models.user_model import find_user_by_email
+from app.users.authentication.validators.email_validator import validar_email_completo
 
 register_blueprint = Blueprint('register', __name__)
 SECRET_KEY = os.environ.get("SECRET_KEY")
@@ -20,6 +22,14 @@ def register():
 
     if not nome or not senha or not email:
         return jsonify({"erro": "Nome, email e senha são obrigatórios"}), 400
+    
+    validacao = validar_email_completo(email)
+    if not validacao['valid']:
+      return jsonify({
+        "erro": "E-mail inválido",
+        "detalhes": validacao['reason'],
+        "confiabilidade": validacao['confidence']
+      }), 400
 
     senha_criptografada = bcrypt.hashpw(senha.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
 

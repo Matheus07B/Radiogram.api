@@ -56,17 +56,3 @@ def register_routes(app):
     
     # Upload
     app.register_blueprint(add_friend_blueprint, url_prefix='/addfriend')
-
-"""
-    # ====== Rotas diretas ======
-    #
-    # @app.route('/', methods=['GET'])
-    # def home():
-    #     return jsonify({"message": "teste de conexão da API!"}), 200
-
-    # @app.route('/listar', methods=['GET'])
-    # def listar():
-    #     users = get_all_users() # Lista de objetos sqlite3.Row
-    #     users_list = [dict(row) for row in users] # Converte cada linha em um dicionário
-    #     return jsonify({"usuarios": users_list}), 200
-"""

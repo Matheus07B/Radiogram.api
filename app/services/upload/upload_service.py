@@ -4,21 +4,17 @@ import os
 import uuid
 import hashlib
 
-# Blueprint para upload
 upload_blueprint = Blueprint('upload', __name__, template_folder='templates/')
 
 # Tamanho máximo de 2 GB (em bytes)
 MAX_CONTENT_LENGTH = 2 * 1024 * 1024 * 1024  # 2 GB
 
 # Caminho fixo para a pasta onde os arquivos serão salvos
-UPLOAD_FOLDER = '/var/www/html/Radiogram.api/app/services/upload/uploads/'
-
-# Garante que a pasta exista
+UPLOAD_FOLDER = os.getenv('UPLOAD_FOLDER')
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 
 @upload_blueprint.before_request
 def limit_file_size():
-    """Verifica se o tamanho do corpo da requisição excede o limite"""
     if request.content_length is not None and request.content_length > MAX_CONTENT_LENGTH:
         abort(413, description="Arquivo excede o limite de 2 GB.")
 
@@ -79,7 +75,6 @@ def download_link(filename):
 
 @upload_blueprint.route('/uploads/<filename>')
 def serve_file(filename):
-    # Serve os arquivos a partir da pasta absoluta
     return send_from_directory(UPLOAD_FOLDER, filename, as_attachment=True)
 
 '''

@@ -1,4 +1,6 @@
+import os
 import smtplib
+
 from flask import Blueprint, jsonify
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
@@ -9,9 +11,9 @@ email_blueprint = Blueprint('/email', __name__)
 def enviar_email():
     smtp_server = "smtp.gmail.com"
     smtp_port = 587
-    email_sender = "matheusveneski654@gmail.com"  # Seu e-mail
-    email_destinatario = "matheusveneski654@gmail.com"  # Destinatário fixo
-    email_password = "koyn eoxi xlmp oyzm"  # Sua senha de aplicativo
+    email_sender = os.getenv('EMAIL_SENDER')
+    email_destinatario = os.getenv('EMAIL_SENDER')
+    email_password = os.getenv('EMAIL_KEY')
     subject = "Teste de envio de email"
     body = "Este é um teste de envio de e-mail utilizando Flask e smtplib."
 

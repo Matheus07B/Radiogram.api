@@ -10,3 +10,4 @@ flask_sqlalchemy
 flask_jwt_extended
 werkzeug
 requests
+dnspython

@@ -7,6 +7,11 @@ INSERT INTO friendships (user_id, friend_id) VALUES (2, 1);  -- João é amigo d
 SELECT * FROM friendships WHERE user_id = 2;
 ```
 
+```sql
+INSERT INTO rooms (room_code, user1_id, user2_id)
+VALUES ('room_3_2', 3, 2);
+```
+
 ## Inserir mensagem na tabela de mensagens
 
 ```sql

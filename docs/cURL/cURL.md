@@ -11,8 +11,20 @@ curl -X POST "http://127.0.0.1:5001/login" -H "Content-Type: application/json" -
 ```json
 {
   "mensagem": "Login realizado com sucesso!",
-  "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX2lkIjoyLCJlbWFpbCI6IjJAZ21haWwuY29tIiwiZXhwIjoxNzY5MzI2ODc4fQ.SsgJSsJKuAE7Ysvv9WtrjuAD_NZ4kXasn5unhwm3QBM"
+  "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX2lkIjoxLCJub21lIjoiTWF0aGV1cyBGb25zZWNhIiwiZW1haWwiOiJtYXRoZXVzdmVuZXNraTY1NEBnbWFpbC5jb20iLCJiaW8iOm51bGwsInRlbGVmb25lIjoiNTUyMjk4MTU4ODM0NCIsInVzZXJVVUlEIjoiZmRkYzhhNzctNWQxYy00NDgyLWEwZmEtNDY5ODE5MTlhNmFhIiwiZXhwIjoxNzgxMTI3MjAxfQ.U5li-eycUgjt8I_azLuCgmrUmjvFp0kwAk300auSv2o"
 }
+```
+
+**Se tentar usar um Unicode? tipo um caracter Russo parecido com o 'a'**
+
+```json
+C:\Users\mathe>curl -X POST "https://api.radiogram.shop/login" -H "Content-Type: application/json" -d "{\"email\": \"mаtheusveneski654@gmail.com\", \"senha\": \"123456\"}"
+{
+  "confiabilidade": "low",
+  "detalhes": "Formato inv\u00e1lido ou dom\u00ednio proibido",
+  "erro": "E-mail inv\u00e1lido"
+}
+C:\Users\mathe>
 ```
 
 ## Listar amigos
