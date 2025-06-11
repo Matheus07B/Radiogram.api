@@ -1,26 +1,27 @@
 # import dropbox
-# import os
-import base64
-import requests
-import sqlite3
-import uuid
-import hashlib
 import os
+import uuid
+import base64
+import sqlite3
+import hashlib
+import requests
 
-from datetime import datetime
 from io import BytesIO
-
+from datetime import datetime
+from cryptography.fernet import Fernet
 from flask import Flask, request, Blueprint
 from flask_socketio import send, emit, join_room, leave_room
+
 from app.websocket import socketio  # Importa a instância global do SocketIO
 from app.models.database import get_db_connection
+from app.websocket.security.check_message import is_message_safe
 
 chat_blueprint = Blueprint('chat', __name__)  # Definição do Blueprint
 
 users_rooms = {}  # Mapeia SID do usuário para sua sala atual
 
 # Configuração do backend de armazenamento
-STORAGE_API_URL = "https://cloud-personal.onrender.com/upload" # Colocar no Os depois
+STORAGE_API_URL = os.getenv('STORAGE_API_URL')
 
 def generate_unique_filename(filename):
     """Gera um nome único baseado em UUID + hash"""
@@ -57,9 +58,20 @@ def handle_leave(data):
         print(f"Usuário {sid} saiu manualmente da sala {room}")
 
 # EMITS de mensagens e etc. ================================================
+# criptografia
+CRYPT_KEY = Fernet.generate_key()
+fernet = Fernet(CRYPT_KEY)
+
+def encrypt_message(message: str) -> str:
+    return fernet.encrypt(message.encode()).decode()
+
+def decrypt_message(token: str) -> str:
+    return fernet.decrypt(token.encode()).decode()
+
 # Mensagens.
 @socketio.on('message')
 def handle_message(data):
+    # message = encrypt_message(data.get('message'))
     try:
         room = data.get('room')
         message = data.get('message')
@@ -69,6 +81,16 @@ def handle_message(data):
 
         # Debug simplificado (descomente se precisar)
         # logging.debug(f"Mensagem na sala {room} às {time}: {message}")
+
+        # Verificação de segurança
+        if not is_message_safe(message):
+            print(f"⚠️ Mensagem bloqueada (conteúdo suspeito): {message}")
+            # Aqui você pode registrar o incidente ou rejeitar a mensagem
+            return {"status": "error", "reason": "Conteúdo não permitido"}
+        
+        # Se estiver tudo certo criptografa a mensagem
+        # message = encrypt_message(message)
+        # message = decrypt_message(encrypted_message)
 
         print(f"[{time}] Sala: {room} | De: {user_id} Para: {friend_id} | Mensagem: {message}")
 

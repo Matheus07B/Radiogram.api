@@ -1,14 +1,14 @@
+import jwt
+import sqlite3
+
+from flask_sqlalchemy import SQLAlchemy
 from flask import Blueprint, jsonify, request
+from flask_jwt_extended import jwt_required, get_jwt_identity
+
+from config import Config
 from app.models.user_model import get_all_users
 from app.utils.decorators import verificar_token
 from app.models.database import get_db_connection
-from config import Config
-
-from flask_sqlalchemy import SQLAlchemy
-from flask_jwt_extended import jwt_required, get_jwt_identity
-
-import jwt
-import sqlite3
 
 friends_blueprint = Blueprint('friends', __name__)
 
