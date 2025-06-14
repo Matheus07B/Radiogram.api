@@ -1,4 +1,4 @@
-from flask import Blueprint, request, render_template, send_from_directory, redirect, url_for, abort
+from flask import Blueprint, request, render_template, send_from_directory, redirect, url_for, abort, jsonify
 from werkzeug.utils import secure_filename
 import os
 import uuid
@@ -32,6 +32,27 @@ def index():
 @upload_blueprint.route('/upload', methods=['POST'])
 def upload():
     file = request.files.get('file')
+    if not file or file.filename == '':
+        return jsonify({"error": "Arquivo inválido"}), 400
+
+    filename = file.filename
+    filepath = os.path.join(UPLOAD_FOLDER, filename)
+    file.save(filepath)
+
+    file_url = url_for('upload.serve_file', filename=filename, _external=True)
+
+    # Se for uma requisição esperando JSON (React Native, etc.)
+    if request.headers.get('Accept') == 'application/json':
+        return jsonify({"url": file_url})
+
+    # Comportamento antigo para web e Electron
+    # return redirect(url_for('upload.download_link', filename=filename))
+    return redirect(url_for('upload.serve_file', filename=filename))
+
+""" - Código antigo
+@upload_blueprint.route('/upload', methods=['POST'])
+def upload():
+    file = request.files.get('file')
     if not file:
         return "Nenhum arquivo enviado", 400
     
@@ -46,6 +67,7 @@ def upload():
 
     print(url_for('upload.download_link', filename=filename, _external=True))
     return redirect(url_for('upload.download_link', filename=filename))
+"""
 
 @upload_blueprint.route('/listFiles', methods=['GET'])
 def list_files():
