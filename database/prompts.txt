@@ -9,3 +9,43 @@ INSERT INTO friendships (user_id, friend_id) VALUES
 # adicionar a sala
 INSERT INTO rooms (room_code, user1_id, user2_id)
 VALUES ('room_3_2', 3, 2);
+
+# adicionar usuario
+-- Usuário 1 (senha "123456")
+INSERT INTO usuarios (
+    nome, email, telefone, senha, userUUID, bio, pic
+) VALUES (
+    '2',
+    '2@2', 
+    '22222222222',
+    '123456', -- hash para "123456"
+    '21b2c3d4-e5f6-4a7b-8c9d-0e1f2a3b4c5d',
+    '2 e 2',
+    'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcS821V16YV-5SLgabB4W5O4w4CLqbVo_4Yedw&s'
+);
+
+-- Usuário 2 (senha "123456")
+INSERT INTO usuarios (
+    nome, email, telefone, senha, userUUID, bio, pic
+) VALUES (
+    'Maria Oliveira',
+    'maria@exemplo.com',
+    '5511912345678',
+    '123456', -- hash para "123456"
+    'a1s2c3d4-e5f6-4a7b-8c9d-0e1f2a3b4c5d',
+    'Desenvolvedora front-end e entusiasta de UX',
+    'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTqHp59YJK_PdoHWHTk2K6IaxlmGdZ7e-Npuw&s'
+);
+
+-- Usuário 3 (senha "123456")
+INSERT INTO usuarios (
+    nome, email, telefone, senha, userUUID, bio, pic
+) VALUES (
+    'Matheus Fonseca',
+    'matheusveneski654@gmail.com',
+    '5522981588344',
+    '123456', -- hash para "123456"
+    'k9s2c3d4-e5f6-4a7b-8c9d-0e1f2a3b4c5d',
+    'Desenvolvedor front-end e entusiasta de UX',
+    'https://cdna.artstation.com/p/assets/images/images/063/539/062/large/gustavo-leite-aaaaaaaaaaaa.jpg?1685751504'
+);

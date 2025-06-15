@@ -42,7 +42,7 @@ def list_friends():
 
     cursor.execute(
         '''
-            SELECT u.id, u.nome, u.email
+            SELECT u.id, u.nome, u.email, u.telefone, u.userUUID, u.bio, u.pic
             FROM friendships f
             JOIN usuarios u ON f.friend_id = u.id
             WHERE f.user_id = ?
@@ -52,7 +52,16 @@ def list_friends():
     conn.close()
 
     # Formatar os resultados para retornar como JSON
-    friends = [{"id": friend["id"], "nome": friend["nome"], "email": friend["email"]} for friend in friends]
+    friends = [{
+        "id": friend["id"], 
+        "nome": friend["nome"],
+        "email": friend["email"],
+        "telefone": friend["telefone"], 
+        "userUUID": friend["userUUID"],
+        "bio": friend["bio"],
+        "pic": friend["pic"]
+    } for friend in friends]
+    print(friends)
     return jsonify(friends), 200
 
 @friends_blueprint.route('/list/selected', methods=['GET'])
@@ -244,41 +253,26 @@ def get_room():
         # Se a sala não for encontrada, retorna erro 404
         return jsonify({"error": "Room not found"}), 404
 
-# Inserir as mensagens no banco de dados.
-@friends_blueprint.route('/insert', methods=['POST'])
-# @verificar_token  # Protege este endpoint com verificação de token
-def insert_message():
-    try:
-        # Pega os dados da requisição
-        data = request.get_json()
+# Rota para deletar mensagem
+@friends_blueprint.route('/deleteMESSAGE/<int:message_id>', methods=['DELETE'])
+def delete_message(message_id):
+    conn = get_db_connection()
+    cursor = conn.cursor()
 
-        sender_id = data.get('sender_id')
-        receiver_id = data.get('receiver_id')
-        message = data.get('message')
-        time = data.get('time')
+    # Verifica se a mensagem existe
+    cursor.execute('SELECT * FROM friendMessages WHERE id = ?', (message_id,))
+    message = cursor.fetchone()
 
-        if not sender_id or not receiver_id or not message:
-            return jsonify({"error": "Faltando informações"}), 400
-
-        # Conectar ao banco de dados
-        conn = get_db_connection()
-        cursor = conn.cursor()
-
-        # Inserir mensagem na tabela
-        cursor.execute('''
-            INSERT INTO friendMessages (sender_id, receiver_id, message, time)
-            VALUES (?, ?, ?, ?)
-        ''', (sender_id, receiver_id, message, time))
-
-        conn.commit()
-
-        # Fechar a conexão
+    if message is None:
         conn.close()
+        return jsonify({'error': 'Mensagem não encontrada'}), 404
 
-        return jsonify({"status": "Mensagem inserida com sucesso!"}), 200
+    # Deleta a mensagem
+    cursor.execute('DELETE FROM friendMessages WHERE id = ?', (message_id,))
+    conn.commit()
+    conn.close()
 
-    except Exception as e:
-        return jsonify({"error": str(e)}), 500
+    return jsonify({'success': True, 'message': 'Mensagem deletada com sucesso'}), 200
 
 @friends_blueprint.route('/add-friend', methods=['GET'])
 # @verificar_token  # Protege este endpoint com verificação de token

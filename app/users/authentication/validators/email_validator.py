@@ -112,6 +112,6 @@ class EmailValidator:
 # Instância global para reutilização
 email_validator = EmailValidator()
 
-def validar_email_completo(email: str) -> dict:
+def validar_email(email: str) -> dict:
   """Interface simplificada para o validador"""
   return email_validator.validate_email(email)
