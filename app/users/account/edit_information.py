@@ -104,4 +104,4 @@ def edit_profile():
     except Exception as e:
         if 'conn' in locals():
             conn.close()
-        return jsonify({'error': 'A atualização não foi concluida com sucesso!'}), 500
+        return jsonify({'error': 'A atualização não foi concluida!'}), 500

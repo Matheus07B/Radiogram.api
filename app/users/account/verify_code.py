@@ -29,4 +29,4 @@ def verificar_codigo():
             return jsonify({"erro": "Código inválido ou expirado"}), 401
 
     except Exception as e:
-        return jsonify({"erro": f"Erro no servidor: {str(e)}"}), 500
+        return jsonify({"erro": f"Erro interno!"}), 500

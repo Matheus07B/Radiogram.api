@@ -10,7 +10,7 @@ from app.models.user_model import get_all_users
 from app.utils.decorators import token_required
 from app.models.database import get_db_connection
 
-friends_blueprint = Blueprint('friends', __name__)
+from . import friends_blueprint
 
 @friends_blueprint.route('/list', methods=['GET'])
 @token_required
@@ -62,7 +62,6 @@ def list_friends():
         "bio": friend["bio"],
         "pic": friend["pic"]
     } for friend in friends]
-    print(friends)
     return jsonify(friends), 200
 
 @friends_blueprint.route('/list/selected', methods=['GET'])
@@ -257,21 +256,14 @@ def get_room():
         # Se a sala não for encontrada, retorna erro 404
         return jsonify({"error": "Room not found"}), 404
 
-@friends_blueprint.route('/add-friend', methods=['GET'])
-# @verificar_token  # Protege este endpoint com verificação de token
-@token_required
-def addFriends():
-    return jsonify({"For what": "To add a new friend!"}), 200
+# @friends_blueprint.route('/LA', methods=['GET'])
+# @token_required
+# def listar_usuarios():
+#     conn = get_db_connection()
+#     cursor = conn.cursor()
+#     cursor.execute('SELECT id, nome, email, senha FROM usuarios')  # Apenas ID, nome e e-mail
+#     usuarios = cursor.fetchall()
+#     conn.close()
 
-@friends_blueprint.route('/LA', methods=['GET'])
-# @verificar_token  # Protege este endpoint com verificação de token
-@token_required
-def listar_usuarios():
-    conn = get_db_connection()
-    cursor = conn.cursor()
-    cursor.execute('SELECT id, nome, email, senha FROM usuarios')  # Apenas ID, nome e e-mail
-    usuarios = cursor.fetchall()
-    conn.close()
-
-    resultado = [{"id": usuario["id"], "nome": usuario["nome"], "email": usuario["email"]} for usuario in usuarios]
-    return jsonify(resultado)
+#     resultado = [{"id": usuario["id"], "nome": usuario["nome"], "email": usuario["email"]} for usuario in usuarios]
+#     return jsonify(resultado)

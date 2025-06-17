@@ -1,12 +1,15 @@
-from flask import Blueprint, jsonify, request
-from app.models.database import get_db_connection
-
 import re
 import uuid
 
-add_friend_blueprint = Blueprint('addfriend', __name__)
+from flask import Blueprint, jsonify, request
 
-@add_friend_blueprint.route('', methods=['POST'])
+from app.utils.decorators import token_required
+from app.models.database import get_db_connection
+
+from . import friends_blueprint
+
+@friends_blueprint.route('/add', methods=['POST'])
+@token_required
 def add_friend():
     data = request.get_json()
 

@@ -10,7 +10,7 @@ from app.ping.email import email_blueprint
 # main routes
 from app.users.authentication.user_login import login_blueprint
 from app.users.authentication.user_register import register_blueprint
-from app.users.user_friends import friends_blueprint
+from app.users.friends import friends_blueprint
 
 from app.users.account.edit_information import edit_blueprint
 from app.users.account.recovery_account import recovery_blueprint
@@ -23,9 +23,6 @@ from app.users.chat.chat_options import chat_blueprint
 
 # Upload
 from app.services.upload.upload_service import upload_blueprint
-
-# Add friend
-from app.users.friends.addFriend import add_friend_blueprint
 
 def register_routes(app):
     # rota main aqui
@@ -44,7 +41,6 @@ def register_routes(app):
 
     # amigos
     app.register_blueprint(friends_blueprint, url_prefix='/friends')
-    app.register_blueprint(add_friend_blueprint, url_prefix='/addfriend')
 
     # Editar informações
     app.register_blueprint(edit_blueprint, url_prefix='/edit')

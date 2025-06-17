@@ -74,3 +74,14 @@ CREATE TABLE IF NOT EXISTS recoverCodes (
     email TEXT NOT NULL,
     code TEXT NOT NULL
 )
+
+
+-- IMPLEMENTAR DOS
+
+-- Adicionar coluna (se não existir)
+-- ALTER TABLE recoverCodes ADD COLUMN created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP;
+
+-- -- Query modificada
+-- SELECT email FROM recoverCodes 
+-- WHERE code = ? 
+-- AND created_at > datetime('now', '-15 minutes')

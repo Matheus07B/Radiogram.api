@@ -45,4 +45,5 @@ def trocar_senha():
         return jsonify(mensagem), status
 
     except Exception as e:
-        return jsonify({"erro": f"Erro no servidor: {str(e)}"}), 500
+        # return jsonify({"erro": f"Erro no servidor: {str(e)}"}), 500
+        return jsonify({"erro": "erro interno!"}), 500
