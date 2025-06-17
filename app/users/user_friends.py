@@ -7,12 +7,13 @@ from flask_jwt_extended import jwt_required, get_jwt_identity
 
 from config import Config
 from app.models.user_model import get_all_users
-from app.utils.decorators import verificar_token
+from app.utils.decorators import token_required
 from app.models.database import get_db_connection
 
 friends_blueprint = Blueprint('friends', __name__)
 
 @friends_blueprint.route('/list', methods=['GET'])
+@token_required
 def list_friends():
     # Obter o token do cabeçalho Authorization
     auth_header = request.headers.get('Authorization')
@@ -65,6 +66,7 @@ def list_friends():
     return jsonify(friends), 200
 
 @friends_blueprint.route('/list/selected', methods=['GET'])
+@token_required
 def select_friend_chat():
     # Verificação do token (mantido igual)
     auth_header = request.headers.get('Authorization')
@@ -143,6 +145,7 @@ def select_friend_chat():
 
 # Remover aqui caso necessario.
 @friends_blueprint.route('/list/last', methods=['GET'])
+@token_required
 def get_last_message():
     # Obter o token do cabeçalho Authorization
     auth_header = request.headers.get('Authorization')
@@ -203,6 +206,7 @@ def get_last_message():
 # Remover aqui caso necessario.
 
 @friends_blueprint.route('/get/room', methods=['GET'])
+@token_required
 def get_room():
     # Obter o token do cabeçalho Authorization
     auth_header = request.headers.get('Authorization')
@@ -253,34 +257,15 @@ def get_room():
         # Se a sala não for encontrada, retorna erro 404
         return jsonify({"error": "Room not found"}), 404
 
-# Rota para deletar mensagem
-@friends_blueprint.route('/deleteMESSAGE/<int:message_id>', methods=['DELETE'])
-def delete_message(message_id):
-    conn = get_db_connection()
-    cursor = conn.cursor()
-
-    # Verifica se a mensagem existe
-    cursor.execute('SELECT * FROM friendMessages WHERE id = ?', (message_id,))
-    message = cursor.fetchone()
-
-    if message is None:
-        conn.close()
-        return jsonify({'error': 'Mensagem não encontrada'}), 404
-
-    # Deleta a mensagem
-    cursor.execute('DELETE FROM friendMessages WHERE id = ?', (message_id,))
-    conn.commit()
-    conn.close()
-
-    return jsonify({'success': True, 'message': 'Mensagem deletada com sucesso'}), 200
-
 @friends_blueprint.route('/add-friend', methods=['GET'])
 # @verificar_token  # Protege este endpoint com verificação de token
+@token_required
 def addFriends():
     return jsonify({"For what": "To add a new friend!"}), 200
 
 @friends_blueprint.route('/LA', methods=['GET'])
 # @verificar_token  # Protege este endpoint com verificação de token
+@token_required
 def listar_usuarios():
     conn = get_db_connection()
     cursor = conn.cursor()

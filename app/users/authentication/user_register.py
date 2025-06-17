@@ -5,6 +5,7 @@ import bcrypt
 
 from datetime import datetime, timedelta
 from flask import Blueprint, request, jsonify
+
 from app.models.database import get_db_connection
 from app.models.user_model import find_user_by_email
 from app.users.authentication.validators.email_validator import validar_email
@@ -23,13 +24,13 @@ def register():
     if not nome or not senha or not email:
         return jsonify({"erro": "Nome, email e senha são obrigatórios"}), 400
     
-    validacao = validar_email(email)
-    if not validacao['valid']:
-      return jsonify({
-        "erro": "E-mail inválido",
-        "detalhes": validacao['reason'],
-        "confiabilidade": validacao['confidence']
-      }), 400
+    # validacao = validar_email(email)
+    # if not validacao['valid']:
+    #   return jsonify({
+    #     "erro": "E-mail inválido",
+    #     "detalhes": validacao['reason'],
+    #     "confiabilidade": validacao['confidence']
+    #   }), 400
 
     senha_criptografada = bcrypt.hashpw(senha.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
 
@@ -41,7 +42,7 @@ def register():
         conn.close()
         return jsonify({"erro": "Esse nome de usuário ou email já existe!"}), 400
 
-    user_uuid = str(uuid.uuid4())  # Gerando um UUID único para o usuário
+    user_uuid = str(uuid.uuid4())
 
     try:
         cursor.execute(

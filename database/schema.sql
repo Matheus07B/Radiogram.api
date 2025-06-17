@@ -1,3 +1,4 @@
+-- Usuarios.
 CREATE TABLE IF NOT EXISTS usuarios (
     id INTEGER PRIMARY KEY AUTOINCREMENT,    --
     nome TEXT NOT NULL,                      --
@@ -27,8 +28,8 @@ CREATE TABLE IF NOT EXISTS friendMessages (
     document TEXT,
     time TEXT,
     timestamp DATETIME DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (sender_id) REFERENCES usuarios (id),
-    FOREIGN KEY (receiver_id) REFERENCES usuarios (id)
+    FOREIGN KEY (sender_id) REFERENCES usuarios(id),
+    FOREIGN KEY (receiver_id) REFERENCES usuarios(id)
 );
 
 CREATE TABLE IF NOT EXISTS rooms (
@@ -39,6 +40,34 @@ CREATE TABLE IF NOT EXISTS rooms (
     FOREIGN KEY (user1_id) REFERENCES usuarios(id),
     FOREIGN KEY (user2_id) REFERENCES usuarios(id)
 );
+-- Usuarios.
+
+-- Grupos.
+CREATE TABLE IF NOT EXISTS groups (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    name TEXT NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS group_members (
+    user_id INTEGER,
+    group_id INTEGER,
+    FOREIGN KEY(user_id) REFERENCES usuarios(id),
+    FOREIGN KEY(group_id) REFERENCES groups(id)
+);
+
+CREATE TABLE IF NOT EXISTS group_messages (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    group_id INTEGER,
+    sender_id INTEGER,
+    message TEXT,
+    image TEXT,
+    document TEXT,
+    video TEXT,
+    timestamp TEXT DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY(group_id) REFERENCES groups(id),
+    FOREIGN KEY(sender_id) REFERENCES usuarios(id)
+);
+-- Grupos.
 
 CREATE TABLE IF NOT EXISTS recoverCodes (
     id INTEGER PRIMARY KEY AUTOINCREMENT,

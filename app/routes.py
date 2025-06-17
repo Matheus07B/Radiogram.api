@@ -12,12 +12,14 @@ from app.users.authentication.user_login import login_blueprint
 from app.users.authentication.user_register import register_blueprint
 from app.users.user_friends import friends_blueprint
 
+from app.users.account.edit_information import edit_blueprint
 from app.users.account.recovery_account import recovery_blueprint
 from app.users.account.verify_code import verify_recover_code_blueprint
 from app.users.account.change_password import change_password_blueprint
 
 # websockets
-from app.websocket.chat import chat_blueprint
+from app.websocket.websocket_chat import websocket_blueprint
+from app.users.chat.chat_options import chat_blueprint
 
 # Upload
 from app.services.upload.upload_service import upload_blueprint
@@ -42,17 +44,19 @@ def register_routes(app):
 
     # amigos
     app.register_blueprint(friends_blueprint, url_prefix='/friends')
+    app.register_blueprint(add_friend_blueprint, url_prefix='/addfriend')
+
+    # Editar informações
+    app.register_blueprint(edit_blueprint, url_prefix='/edit')
 
     # recuperar conta
     app.register_blueprint(recovery_blueprint, url_prefix='/recovery')
     app.register_blueprint(verify_recover_code_blueprint, url_prefix='/verifycode')
     app.register_blueprint(change_password_blueprint, url_prefix='/changepassword')
 
-    # Criação do websocket
+    # Criação do websocket / configurações do chat e etc.
+    app.register_blueprint(websocket_blueprint, url_prefix='/websocket')
     app.register_blueprint(chat_blueprint, url_prefix='/chat')
 
     # Upload
     app.register_blueprint(upload_blueprint, url_prefix='/upload')
-    
-    # Upload
-    app.register_blueprint(add_friend_blueprint, url_prefix='/addfriend')
