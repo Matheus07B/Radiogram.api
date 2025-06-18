@@ -69,7 +69,7 @@ def encrypt_message(message: str) -> str:
 def decrypt_message(token: str) -> str:
     return fernet.decrypt(token.encode()).decode()
 
-# Mensagens.
+# Mensagens dos amigos.
 @socketio.on('message')
 def handle_message(data):
     # message = encrypt_message(data.get('message'))
@@ -116,6 +116,59 @@ def handle_message(data):
 
     except Exception as e:
         print(f"Erro ao processar mensagem: {e}")
+    finally:
+        try:
+            cursor.close()
+            conn.close()
+        except Exception:
+            pass
+
+@socketio.on('message-gp')
+def handle_group_message(data):
+    try:
+        room = data.get('room')  # UUID do grupo
+        message = data.get('message')
+        user_id = data.get('user_id')
+        time = data.get('time')
+
+        # Verificação básica de segurança
+        if not is_message_safe(message):
+            print(f"⚠️ Mensagem bloqueada (conteúdo suspeito): {message}")
+            return {"status": "error", "reason": "Conteúdo não permitido"}
+
+        print(f"[{time}] Sala (Grupo): {room} | De: {user_id} | Mensagem: {message}")
+
+        # Envia a mensagem para todos os usuários na sala
+        socketio.emit("message", {
+            "room": room,
+            "message": message,
+            "time": time,
+            "sender": request.sid
+        }, room=room)
+
+        # Insere no banco de dados
+        conn = get_db_connection()
+        cursor = conn.cursor()
+
+        # Primeiro pega o ID do grupo com base no UUID
+        cursor.execute("SELECT id FROM groups WHERE uuid = ?", (room,))
+        group = cursor.fetchone()
+
+        if group:
+            group_id = group["id"]
+
+            query = """
+                INSERT INTO group_messages (message, time, sender_id, group_id)
+                VALUES (?, ?, ?, ?)
+            """
+            cursor.execute(query, (message, time, user_id, group_id))
+            conn.commit()
+        else:
+            print(f"❌ Grupo com UUID {room} não encontrado no banco.")
+            return {"status": "error", "reason": "Grupo não encontrado"}
+
+    except Exception as e:
+        print(f"❌ Erro ao processar mensagem do grupo: {e}")
     finally:
         try:
             cursor.close()

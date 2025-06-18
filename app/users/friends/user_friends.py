@@ -15,21 +15,17 @@ from . import friends_blueprint
 @friends_blueprint.route('/list', methods=['GET'])
 @token_required
 def list_friends():
-    # Obter o token do cabeçalho Authorization
     auth_header = request.headers.get('Authorization')
     if not auth_header:
         return jsonify({"error": "Token de autorização é obrigatório"}), 401
 
-    # Verificar se o cabeçalho está no formato esperado "Bearer <token>"
     if not auth_header.startswith("Bearer "):
         return jsonify({"error": "Formato de token inválido"}), 401
 
     try:
-        # Extrair o token
         token = auth_header.split(" ")[1]
-        # Decodificar o token JWT usando a SECRET_KEY da configuração
         payload = jwt.decode(token, Config.SECRET_KEY, algorithms=["HS256"])
-        user_id = payload.get("user_id")  # Obter o user_id do payload
+        user_id = payload.get("user_id")
         if not user_id:
             return jsonify({"error": "Token inválido: user_id não encontrado"}), 401
     except jwt.ExpiredSignatureError:
@@ -37,32 +33,53 @@ def list_friends():
     except jwt.InvalidTokenError:
         return jsonify({"error": "Token inválido"}), 401
 
-    # Consulta ao banco de dados
+    # Buscar amigos
     conn = get_db_connection()
     cursor = conn.cursor()
-
-    cursor.execute(
-        '''
-            SELECT u.id, u.nome, u.email, u.telefone, u.userUUID, u.bio, u.pic
-            FROM friendships f
-            JOIN usuarios u ON f.friend_id = u.id
-            WHERE f.user_id = ?
-        ''', (user_id,)
-    )
+    cursor.execute('''
+        SELECT u.id, u.nome, u.email, u.telefone, u.userUUID, u.bio, u.pic
+        FROM friendships f
+        JOIN usuarios u ON f.friend_id = u.id
+        WHERE f.user_id = ?
+    ''', (user_id,))
     friends = cursor.fetchall()
     conn.close()
 
-    # Formatar os resultados para retornar como JSON
-    friends = [{
-        "id": friend["id"], 
+    # Buscar grupos
+    con = get_db_connection()
+    cur = con.cursor()
+    cur.execute("""
+        SELECT g.id, g.name, g.uuid
+        FROM groups g
+        JOIN group_members gm ON g.id = gm.group_id
+        WHERE gm.user_id = ?
+    """, (user_id,))
+    grupos = cur.fetchall()
+    con.close()
+
+    # Formatar amigos
+    friends_data = [{
+        "id": friend["id"],
         "nome": friend["nome"],
         "email": friend["email"],
-        "telefone": friend["telefone"], 
+        "telefone": friend["telefone"],
         "userUUID": friend["userUUID"],
         "bio": friend["bio"],
         "pic": friend["pic"]
     } for friend in friends]
-    return jsonify(friends), 200
+
+    # Formatar grupos com UUID incluído
+    grupos_data = [{
+        "id": grupo[0],
+        "name": grupo[1],
+        "uuid": grupo[2]
+    } for grupo in grupos]
+
+    # Resposta final com amigos e grupos
+    return jsonify({
+        "friends": friends_data,
+        "groups": grupos_data
+    }), 200
 
 @friends_blueprint.route('/list/selected', methods=['GET'])
 @token_required

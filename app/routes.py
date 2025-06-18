@@ -17,6 +17,8 @@ from app.users.account.recovery_account import recovery_blueprint
 from app.users.account.verify_code import verify_recover_code_blueprint
 from app.users.account.change_password import change_password_blueprint
 
+from app.users.group import groups_blueprint
+
 # websockets
 from app.websocket.websocket_chat import websocket_blueprint
 from app.users.chat.chat_options import chat_blueprint
@@ -49,6 +51,9 @@ def register_routes(app):
     app.register_blueprint(recovery_blueprint, url_prefix='/recovery')
     app.register_blueprint(verify_recover_code_blueprint, url_prefix='/verifycode')
     app.register_blueprint(change_password_blueprint, url_prefix='/changepassword')
+
+    # Grupos
+    app.register_blueprint(groups_blueprint, url_prefix='/groups')
 
     # Criação do websocket / configurações do chat e etc.
     app.register_blueprint(websocket_blueprint, url_prefix='/websocket')

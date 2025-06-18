@@ -45,6 +45,7 @@ CREATE TABLE IF NOT EXISTS rooms (
 -- Grupos.
 CREATE TABLE IF NOT EXISTS groups (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
+    uuid TEXT NOT NULL UNIQUE,
     name TEXT NOT NULL
 );
 
@@ -63,6 +64,7 @@ CREATE TABLE IF NOT EXISTS group_messages (
     image TEXT,
     document TEXT,
     video TEXT,
+    time TEXT,
     timestamp TEXT DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY(group_id) REFERENCES groups(id),
     FOREIGN KEY(sender_id) REFERENCES usuarios(id)
