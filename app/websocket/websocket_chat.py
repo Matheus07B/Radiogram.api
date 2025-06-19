@@ -58,7 +58,7 @@ def handle_leave(data):
         del users_rooms[sid]
         print(f"Usuário {sid} saiu manualmente da sala {room}")
 
-# EMITS de mensagens e etc. ================================================
+# EMITS de mensagens e etc dos amigos. ================================================
 # criptografia
 CRYPT_KEY = Fernet.generate_key()
 fernet = Fernet(CRYPT_KEY)
@@ -73,6 +73,8 @@ def decrypt_message(token: str) -> str:
 @socketio.on('message')
 def handle_message(data):
     # message = encrypt_message(data.get('message'))
+    room = data.get('room')
+
     try:
         room = data.get('room')
         message = data.get('message')
@@ -80,22 +82,12 @@ def handle_message(data):
         friend_id = data.get('friend_id')
         time = data.get('time')
 
-        # Debug simplificado (descomente se precisar)
-        # logging.debug(f"Mensagem na sala {room} às {time}: {message}")
-
         # Verificação de segurança
         if not is_message_safe(message):
             print(f"⚠️ Mensagem bloqueada (conteúdo suspeito): {message}")
-            # Aqui você pode registrar o incidente ou rejeitar a mensagem
             return {"status": "error", "reason": "Conteúdo não permitido"}
-        
-        # Se estiver tudo certo criptografa a mensagem
-        # message = encrypt_message(message)
-        # message = decrypt_message(encrypted_message)
 
-        print(f"[{time}] Sala: {room} | De: {user_id} Para: {friend_id} | Mensagem: {message}")
-
-        # Envia a mensagem para todos na sala
+        # Envia a mensagem para todos na sala (evento padrão)
         socketio.emit("message", {
             "room": room,
             "message": message,
@@ -103,72 +95,44 @@ def handle_message(data):
             "sender": request.sid
         }, room=room)
 
-        # Insere a mensagem no banco
+        # Conexão com o banco
         conn = get_db_connection()
         cursor = conn.cursor()
 
-        query = """
-            INSERT INTO friendMessages (message, time, sender_id, receiver_id)
-            VALUES (?, ?, ?, ?)
-        """
-        cursor.execute(query, (message, time, user_id, friend_id))
+        # Primeiro tenta verificar se é uma sala privada (amigos)
+        cursor.execute("SELECT * FROM rooms WHERE room_code = ?", (room,))
+        private_result = cursor.fetchone()
+
+        if private_result:
+            print(f"[{time}] Sala (Amigo): {room} | De: {user_id} Para: {friend_id} | Mensagem: {message}")
+            query = """
+                INSERT INTO friendMessages (message, time, sender_id, receiver_id)
+                VALUES (?, ?, ?, ?)
+            """
+            cursor.execute(query, (message, time, user_id, friend_id))
+
+        else:
+            # Se não for privado, tenta ver se é grupo
+            cursor.execute("SELECT * FROM groups WHERE uuid = ?", (room,))
+            group_result = cursor.fetchone()
+
+            if group_result:
+                group_id = group_result["id"]
+                print(f"[{time}] Sala (Grupo): {room} | De: {user_id} | Mensagem: {message}")
+                query = """
+                    INSERT INTO group_messages (group_id, sender_id, message, time, timestamp)
+                    VALUES (?, ?, ?, ?, ?)
+                """
+                current_timestamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+                cursor.execute(query, (group_id, user_id, message, time, current_timestamp))
+            else:
+                print("⚠️ Sala não encontrada: nem grupo nem amigos.")
+                return {"status": "error", "reason": "Sala inválida"}
+
         conn.commit()
 
     except Exception as e:
         print(f"Erro ao processar mensagem: {e}")
-    finally:
-        try:
-            cursor.close()
-            conn.close()
-        except Exception:
-            pass
-
-@socketio.on('message-gp')
-def handle_group_message(data):
-    try:
-        room = data.get('room')  # UUID do grupo
-        message = data.get('message')
-        user_id = data.get('user_id')
-        time = data.get('time')
-
-        # Verificação básica de segurança
-        if not is_message_safe(message):
-            print(f"⚠️ Mensagem bloqueada (conteúdo suspeito): {message}")
-            return {"status": "error", "reason": "Conteúdo não permitido"}
-
-        print(f"[{time}] Sala (Grupo): {room} | De: {user_id} | Mensagem: {message}")
-
-        # Envia a mensagem para todos os usuários na sala
-        socketio.emit("message", {
-            "room": room,
-            "message": message,
-            "time": time,
-            "sender": request.sid
-        }, room=room)
-
-        # Insere no banco de dados
-        conn = get_db_connection()
-        cursor = conn.cursor()
-
-        # Primeiro pega o ID do grupo com base no UUID
-        cursor.execute("SELECT id FROM groups WHERE uuid = ?", (room,))
-        group = cursor.fetchone()
-
-        if group:
-            group_id = group["id"]
-
-            query = """
-                INSERT INTO group_messages (message, time, sender_id, group_id)
-                VALUES (?, ?, ?, ?)
-            """
-            cursor.execute(query, (message, time, user_id, group_id))
-            conn.commit()
-        else:
-            print(f"❌ Grupo com UUID {room} não encontrado no banco.")
-            return {"status": "error", "reason": "Grupo não encontrado"}
-
-    except Exception as e:
-        print(f"❌ Erro ao processar mensagem do grupo: {e}")
     finally:
         try:
             cursor.close()
@@ -335,7 +299,62 @@ def handle_document(data):
         print(f"Erro no processamento do documento: {str(e)}")
         import traceback
         traceback.print_exc()
-# ================================================
+# EMITS de mensagens e etc dos amigos. ================================================
+
+# EMITS de mensagens e etc dos grupos. ================================================
+@socketio.on('message-gp')
+def handle_group_message(data):
+    try:
+        room = data.get('room')  # UUID do grupo
+        message = data.get('message')
+        user_id = data.get('user_id')
+        time = data.get('time')
+
+        # Verificação básica de segurança
+        if not is_message_safe(message):
+            print(f"⚠️ Mensagem bloqueada (conteúdo suspeito): {message}")
+            return {"status": "error", "reason": "Conteúdo não permitido"}
+
+        print(f"[{time}] Sala (Grupo): {room} | De: {user_id} | Mensagem: {message}")
+
+        # Envia a mensagem para todos os usuários na sala
+        socketio.emit("message", {
+            "room": room,
+            "message": message,
+            "time": time,
+            "sender": request.sid
+        }, room=room)
+
+        # Insere no banco de dados
+        conn = get_db_connection()
+        cursor = conn.cursor()
+
+        # Primeiro pega o ID do grupo com base no UUID
+        cursor.execute("SELECT id FROM groups WHERE uuid = ?", (room,))
+        group = cursor.fetchone()
+
+        if group:
+            group_id = group["id"]
+
+            query = """
+                INSERT INTO group_messages (message, time, sender_id, group_id)
+                VALUES (?, ?, ?, ?)
+            """
+            cursor.execute(query, (message, time, user_id, group_id))
+            conn.commit()
+        else:
+            print(f"❌ Grupo com UUID {room} não encontrado no banco.")
+            return {"status": "error", "reason": "Grupo não encontrado"}
+
+    except Exception as e:
+        print(f"❌ Erro ao processar mensagem do grupo: {e}")
+    finally:
+        try:
+            cursor.close()
+            conn.close()
+        except Exception:
+            pass
+# EMITS de mensagens e etc dos grupos. ================================================            
 
 # Criar a aplicação e rodar o WebSocket
 # if __name__ == "__main__":
