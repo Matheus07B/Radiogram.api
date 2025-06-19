@@ -45,7 +45,7 @@ def handle_join(data):
 
     users_rooms[sid] = new_room
     join_room(new_room)
-    print(f"Usuário {username} entrou na sala {new_room}")
+    # print(f"Usuário {username} entrou na sala {new_room}")
 
 # Sai da sala
 @socketio.on('leave')
@@ -73,8 +73,6 @@ def decrypt_message(token: str) -> str:
 @socketio.on('message')
 def handle_message(data):
     # message = encrypt_message(data.get('message'))
-    room = data.get('room')
-
     try:
         room = data.get('room')
         message = data.get('message')
@@ -86,6 +84,12 @@ def handle_message(data):
         if not is_message_safe(message):
             print(f"⚠️ Mensagem bloqueada (conteúdo suspeito): {message}")
             return {"status": "error", "reason": "Conteúdo não permitido"}
+
+        if friend_id is None:
+            # print(f"⚠️ ERRO: friend_id está None! Payload recebido: {data}")
+            # friend_id = "1312312"
+            # return {"status": "error", "reason": "friend_id ausente no chat privado"}
+            return
 
         # Envia a mensagem para todos na sala (evento padrão)
         socketio.emit("message", {
@@ -120,11 +124,11 @@ def handle_message(data):
                 group_id = group_result["id"]
                 print(f"[{time}] Sala (Grupo): {room} | De: {user_id} | Mensagem: {message}")
                 query = """
-                    INSERT INTO group_messages (group_id, sender_id, message, time, timestamp)
-                    VALUES (?, ?, ?, ?, ?)
+                    INSERT INTO group_messages (group_id, sender_id, receiver_uuid, message, time, timestamp)
+                    VALUES (?, ?, ?, ?, ?, ?)
                 """
                 current_timestamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-                cursor.execute(query, (group_id, user_id, message, time, current_timestamp))
+                cursor.execute(query, (group_id, user_id, friend_id, message, time, current_timestamp))
             else:
                 print("⚠️ Sala não encontrada: nem grupo nem amigos.")
                 return {"status": "error", "reason": "Sala inválida"}
@@ -151,19 +155,6 @@ def handle_image(data):
 
     try:
         print(f"Imagem recebida na sala {room} às {time}")
-
-        # # Decodificar a imagem base64
-        # image_data = base64.b64decode(image_base64.split(',')[1])  # Remove o prefixo 'data:image/...;base64,'
-        # files = {'file': ('image.png', BytesIO(image_data), 'image/png')}
-
-        # # Enviar para o backend (armazenar a imagem na nuvem)
-        # response = requests.post(STORAGE_API_URL, files=files)
-
-        # if response.status_code == 200:
-        #     uploaded_image_url = response.json().get("url")  # URL gerada no backend
-
-        # crypt_image = "https://api.radiogram.shop/upload/download/"+generate_unique_filename(image)
-        # print("TESTEEEEEEEEEEEEE - "+ crypt_image) # Somente para debug
 
         socketio.emit("image", {
             "room": room,
@@ -204,18 +195,6 @@ def handle_video(data):
 
     try:
         print(f"Vídeo recebido na sala {room}")
-
-        # Decodificação e preparação do arquivo
-        # video_data = base64.b64decode(video_base64.split(',')[1])
-        # files = {'file': ('video_message.mp4', BytesIO(video_data))}  # Nome genérico
-
-        # # Upload para armazenamento
-        # response = requests.post(STORAGE_API_URL, files=files)
-
-        # if response.status_code == 200:
-        #     video_url = response.json().get("url")
-
-        # crypt_video = generate_unique_filename(video)
 
         # Emissão após o update do video na cloud.
         socketio.emit("video", {
@@ -259,18 +238,6 @@ def handle_document(data):
         print(f"Documento recebido na sala {room} às {time}")
         print(f"Nome do arquivo recebido: {fileNameEmit}")
 
-        # # Decodificar o documento base64
-        # document_data = base64.b64decode(document_base64.split(',')[1])
-        # files = {'file': (file_name, BytesIO(document_data), file_type)}
-
-        # Enviar para o backend de armazenamento
-        # response = requests.post(STORAGE_API_URL, files=files)
-
-        # if response.status_code == 200:
-        #     uploaded_doc_url = response.json().get("url")
-
-        # document = generate_unique_filename(document)
-
         socketio.emit("document", {
             "room": room,
             "document": document,
@@ -300,61 +267,6 @@ def handle_document(data):
         import traceback
         traceback.print_exc()
 # EMITS de mensagens e etc dos amigos. ================================================
-
-# EMITS de mensagens e etc dos grupos. ================================================
-@socketio.on('message-gp')
-def handle_group_message(data):
-    try:
-        room = data.get('room')  # UUID do grupo
-        message = data.get('message')
-        user_id = data.get('user_id')
-        time = data.get('time')
-
-        # Verificação básica de segurança
-        if not is_message_safe(message):
-            print(f"⚠️ Mensagem bloqueada (conteúdo suspeito): {message}")
-            return {"status": "error", "reason": "Conteúdo não permitido"}
-
-        print(f"[{time}] Sala (Grupo): {room} | De: {user_id} | Mensagem: {message}")
-
-        # Envia a mensagem para todos os usuários na sala
-        socketio.emit("message", {
-            "room": room,
-            "message": message,
-            "time": time,
-            "sender": request.sid
-        }, room=room)
-
-        # Insere no banco de dados
-        conn = get_db_connection()
-        cursor = conn.cursor()
-
-        # Primeiro pega o ID do grupo com base no UUID
-        cursor.execute("SELECT id FROM groups WHERE uuid = ?", (room,))
-        group = cursor.fetchone()
-
-        if group:
-            group_id = group["id"]
-
-            query = """
-                INSERT INTO group_messages (message, time, sender_id, group_id)
-                VALUES (?, ?, ?, ?)
-            """
-            cursor.execute(query, (message, time, user_id, group_id))
-            conn.commit()
-        else:
-            print(f"❌ Grupo com UUID {room} não encontrado no banco.")
-            return {"status": "error", "reason": "Grupo não encontrado"}
-
-    except Exception as e:
-        print(f"❌ Erro ao processar mensagem do grupo: {e}")
-    finally:
-        try:
-            cursor.close()
-            conn.close()
-        except Exception:
-            pass
-# EMITS de mensagens e etc dos grupos. ================================================            
 
 # Criar a aplicação e rodar o WebSocket
 # if __name__ == "__main__":

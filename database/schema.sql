@@ -60,6 +60,7 @@ CREATE TABLE IF NOT EXISTS group_messages (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     group_id INTEGER,
     sender_id INTEGER,
+    receiver_uuid TEXT,
     message TEXT,
     image TEXT,
     document TEXT,
