@@ -16,20 +16,34 @@ def delete_message(message_id):
     conn = get_db_connection()
     cursor = conn.cursor()
 
-    # Verifica se a mensagem existe
-    cursor.execute('SELECT * FROM friendMessages WHERE id = ?', (message_id,))
-    message = cursor.fetchone()
+    try:
+        # Verifica se a mensagem é de amigo
+        cursor.execute('SELECT * FROM friendMessages WHERE id = ?', (message_id,))
+        message = cursor.fetchone()
 
-    if message is None:
-        conn.close()
+        if message:
+            cursor.execute('DELETE FROM friendMessages WHERE id = ?', (message_id,))
+            conn.commit()
+            return jsonify({'success': True, 'message': 'Mensagem deletada com sucesso (amigo)'}), 200
+
+        # Caso não seja de amigo, verifica se é de grupo
+        cursor.execute('SELECT * FROM group_messages WHERE id = ?', (message_id,))
+        group_message = cursor.fetchone()
+
+        if group_message:
+            cursor.execute('DELETE FROM group_messages WHERE id = ?', (message_id,))
+            conn.commit()
+            return jsonify({'success': True, 'message': 'Mensagem deletada com sucesso (grupo)'}), 200
+
+        # Se não achou em nenhum dos dois
         return jsonify({'error': 'Mensagem não encontrada'}), 404
 
-    # Deleta a mensagem
-    cursor.execute('DELETE FROM friendMessages WHERE id = ?', (message_id,))
-    conn.commit()
-    conn.close()
+    except Exception as e:
+        print(f"Erro ao deletar mensagem: {e}")
+        return jsonify({'error': 'Erro interno'}), 500
 
-    return jsonify({'success': True, 'message': 'Mensagem deletada com sucesso'}), 200
+    finally:
+        conn.close()
 
 # Rota para editar mensagem
 @chat_blueprint.route('/edit/<int:message_id>', methods=['PUT'])

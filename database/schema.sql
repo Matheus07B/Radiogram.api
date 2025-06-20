@@ -46,11 +46,16 @@ CREATE TABLE IF NOT EXISTS rooms (
 CREATE TABLE IF NOT EXISTS groups (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     uuid TEXT NOT NULL UNIQUE,
-    name TEXT NOT NULL
+    name TEXT NOT NULL,
+    description TEXT DEFAULT '',
+    image_url TEXT DEFAULT '',
+    creator_name TEXT NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
+
 CREATE TABLE IF NOT EXISTS group_members (
-    user_id INTEGER,
+    user_id INTEGER NOT NULL UNIQUE,
     group_id INTEGER,
     FOREIGN KEY(user_id) REFERENCES usuarios(id),
     FOREIGN KEY(group_id) REFERENCES groups(id)

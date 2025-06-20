@@ -45,11 +45,18 @@ def list_friends():
     friends = cursor.fetchall()
     conn.close()
 
-    # Buscar grupos
+   # Buscar grupos
     con = get_db_connection()
     cur = con.cursor()
     cur.execute("""
-        SELECT g.id, g.name, g.uuid
+        SELECT 
+            g.id, 
+            g.name, 
+            g.uuid, 
+            g.description, 
+            g.image_url, 
+            g.creator_name,
+            (SELECT COUNT(*) FROM group_members gm2 WHERE gm2.group_id = g.id) AS total_members
         FROM groups g
         JOIN group_members gm ON g.id = gm.group_id
         WHERE gm.user_id = ?
@@ -68,11 +75,15 @@ def list_friends():
         "pic": friend["pic"]
     } for friend in friends]
 
-    # Formatar grupos com UUID incluído
+    # Formatar grupos com UUID incluído e total de membros
     grupos_data = [{
         "id": grupo[0],
         "name": grupo[1],
-        "uuid": grupo[2]
+        "uuid": grupo[2],
+        "description": grupo[3],
+        "image_url": grupo[4],
+        "creator_name": grupo[5],
+        "total_members": grupo[6]
     } for grupo in grupos]
 
     # Resposta final com amigos e grupos
