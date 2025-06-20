@@ -19,14 +19,13 @@ def add_friend():
     print(f"Número de celular do amigo: {friend_number}")
     print(f"ID do usuário que requisitou a amizade: {user_id}")
 
-    PHONE_REGEX = re.compile(r'^(55)?[1-9]{2}9\d{8}$')  # Aceita DDDs válidos e celular com 9 dígitos
-
-    if not friend_number or not user_id:
-        return jsonify({"message": "Dados insuficientes."}), 400
-
-    # Validação: celular deve ter DDD (2 dígitos de 1-9) e começar com 9, seguido de 8 dígitos
-    if not PHONE_REGEX.fullmatch(friend_number):
-        return jsonify({"message": "Número de celular inválido. Ex: 11912345678 ou 5511912345678"}), 400
+    # if not friend_number or not user_id:
+    #     return jsonify({"message": "Dados insuficientes."}), 400
+    
+    # PHONE_REGEX = re.compile(r'^(55)?[1-9]{2}9\d{8}$')  # Aceita DDDs válidos e celular com 9 dígitos
+    # # Validação: celular deve ter DDD (2 dígitos de 1-9) e começar com 9, seguido de 8 dígitos
+    # if not PHONE_REGEX.fullmatch(friend_number):
+    #     return jsonify({"message": "Número de celular inválido. Ex: 11912345678 ou 5511912345678"}), 400
 
     try:
         # Insert na amizade ========

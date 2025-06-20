@@ -69,7 +69,7 @@ def encrypt_message(message: str) -> str:
 def decrypt_message(token: str) -> str:
     return fernet.decrypt(token.encode()).decode()
 
-# Mensagens dos amigos.
+# Mensagens.
 @socketio.on('message')
 def handle_message(data):
     # message = encrypt_message(data.get('message'))
@@ -122,7 +122,7 @@ def handle_message(data):
 
             if group_result:
                 group_id = group_result["id"]
-                print(f"[{time}] Sala (Grupo): {room} | De: {user_id} | Mensagem: {message}")
+                print(f"[{time}] Sala (Grupo): {room} | De: {user_id} para {friend_id} | Mensagem: {message}")
                 query = """
                     INSERT INTO group_messages (group_id, sender_id, receiver_uuid, message, time, timestamp)
                     VALUES (?, ?, ?, ?, ?, ?)
@@ -147,56 +147,87 @@ def handle_message(data):
 # Fotos.
 @socketio.on('image')
 def handle_image(data):
-    room = data['room']
-    image = data['image']  # Imagem recebida em base64
-    senderID = data['sender_id']
-    friendID = data['friend_id']
-    time = data.get('time', "Horário desconhecido")
-
     try:
-        print(f"Imagem recebida na sala {room} às {time}")
+        room = data['room']
+        image = data['image']  # Imagem recebida em base64
+        senderID = data['sender_id']
+        friendID = data['friend_id']
+        time = data.get('time', "Horário desconhecido")
 
+        # Verificação de segurança simples
+        if not image:
+            print("⚠️ Imagem vazia recebida, ignorando.")
+            return
+
+        # Emite para todos da sala
         socketio.emit("image", {
             "room": room,
-            "image": image,  # URL pública da imagem armazenada (temporária por enquanto)
+            "image": image,
             "time": time,
             "sender": request.sid
         }, room=room)
 
+        # Conectar ao banco
+        conn = get_db_connection()
+        cursor = conn.cursor()
 
-        # Conectar ao banco de dados
-        cursor = get_db_connection()
+        # Primeiro tenta verificar se é uma sala privada (amigos)
+        cursor.execute("SELECT * FROM rooms WHERE room_code = ?", (room,))
+        private_result = cursor.fetchone()
 
-        # Query de inserção
-        query = "INSERT INTO friendMessages (image, time, sender_id, receiver_id) VALUES (?, ?, ?, ?)"
-        data = (image, time, senderID, friendID)
+        if private_result:
+            print(f"[{time}] 📸 Sala (Amigo): {room} | De: {senderID} Para: {friendID}")
+            query = """
+                INSERT INTO friendMessages (image, time, sender_id, receiver_id)
+                VALUES (?, ?, ?, ?)
+            """
+            cursor.execute(query, (image, time, senderID, friendID))
 
-        # Executar a query para salvar a imagem no banco de dados
-        cursor.execute(query, data)
-        cursor.commit()
-        cursor.close()
+        else:
+            # Verifica se é grupo
+            cursor.execute("SELECT * FROM groups WHERE uuid = ?", (room,))
+            group_result = cursor.fetchone()
 
-        print(f"Imagem armazenado: {image}")
+            if group_result:
+                group_id = group_result["id"]
+                print(f"[{time}] 📸 Sala (Grupo): {room} | De: {senderID}")
+                query = """
+                    INSERT INTO group_messages (group_id, sender_id, receiver_uuid, image, time, timestamp)
+                    VALUES (?, ?, ?, ?, ?, ?)
+                """
+                current_timestamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+                cursor.execute(query, (group_id, senderID, friendID, image, time, current_timestamp))
+            else:
+                print("⚠️ Sala não encontrada: nem grupo nem amigos.")
+                return {"status": "error", "reason": "Sala inválida"}
 
-    # else:
-    #     print(f"Erro ao fazer upload da imagem: {response.text}")
+        conn.commit()
 
     except Exception as e:
         print(f"Erro no processamento da imagem: {e}")
+    finally:
+        try:
+            cursor.close()
+            conn.close()
+        except Exception:
+            pass
 
 # Videos.
 @socketio.on('video')
 def handle_video(data):
-    room = data['room']
-    video = data['video']
-    senderID = data['sender_id']
-    friendID = data['friend_id']
-    time = data.get('time', "Horário desconhecido")
-
     try:
-        print(f"Vídeo recebido na sala {room}")
+        room = data['room']
+        video = data['video']
+        senderID = data['sender_id']
+        friendID = data['friend_id']
+        time = data.get('time', "Horário desconhecido")
 
-        # Emissão após o update do video na cloud.
+        # Verificação básica
+        if not video:
+            print("⚠️ Vídeo vazio recebido, ignorando.")
+            return
+
+        # Emissão para a sala
         socketio.emit("video", {
             "room": room,
             "video": video,
@@ -206,16 +237,41 @@ def handle_video(data):
             "friend_id": friendID
         }, room=room)
 
-        # Persistência no banco (estrutura mínima)
-        cursor = get_db_connection()
-        cursor.execute(
-            "INSERT INTO friendMessages (video, time, sender_id, receiver_id) VALUES (?, ?, ?, ?)",
-            (video, time, senderID, friendID)
-        )
-        cursor.commit()
-        cursor.close()
+        # Conexão com banco
+        conn = get_db_connection()
+        cursor = conn.cursor()
 
-        print(f"Vídeo armazenado: {video}")
+        # Verifica se é sala de amigo
+        cursor.execute("SELECT * FROM rooms WHERE room_code = ?", (room,))
+        private_result = cursor.fetchone()
+
+        if private_result:
+            print(f"[{time}] 🎥 Sala (Amigo): {room} | De: {senderID} Para: {friendID}")
+            query = """
+                INSERT INTO friendMessages (video, time, sender_id, receiver_id)
+                VALUES (?, ?, ?, ?)
+            """
+            cursor.execute(query, (video, time, senderID, friendID))
+
+        else:
+            # Verifica se é grupo
+            cursor.execute("SELECT * FROM groups WHERE uuid = ?", (room,))
+            group_result = cursor.fetchone()
+
+            if group_result:
+                group_id = group_result["id"]
+                print(f"[{time}] 🎥 Sala (Grupo): {room} | De: {senderID}")
+                query = """
+                    INSERT INTO group_messages (group_id, sender_id, receiver_uuid, video, time, timestamp)
+                    VALUES (?, ?, ?, ?, ?, ?)
+                """
+                current_timestamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+                cursor.execute(query, (group_id, senderID, friendID, video, time, current_timestamp))
+            else:
+                print("⚠️ Sala não encontrada: nem grupo nem amigos.")
+                return {"status": "error", "reason": "Sala inválida"}
+
+        conn.commit()
 
     except Exception as e:
         print(f"Erro no vídeo: {str(e)}")
@@ -223,6 +279,13 @@ def handle_video(data):
             'message': 'Falha no processamento',
             'room': room
         }, room=room)
+
+    finally:
+        try:
+            cursor.close()
+            conn.close()
+        except Exception:
+            pass
 
 # Documentos
 @socketio.on('document')
@@ -235,9 +298,13 @@ def handle_document(data):
         friend_id = data.get('friend_id')
         time = data.get('time', "Horário desconhecido")
 
-        print(f"Documento recebido na sala {room} às {time}")
-        print(f"Nome do arquivo recebido: {fileNameEmit}")
+        if not document:
+            print("⚠️ Documento vazio recebido, ignorando.")
+            return
 
+        print(f"📄 Documento recebido na sala {room} às {time} | Nome: {fileNameEmit}")
+
+        # Emitir para os usuários na sala
         socketio.emit("document", {
             "room": room,
             "document": document,
@@ -248,24 +315,56 @@ def handle_document(data):
             "friend_id": friend_id
         }, room=room)
 
-        # Salvar no banco de dados
-        cursor = get_db_connection()
-        query = """INSERT INTO friendMessages(document, time, sender_id, receiver_id) VALUES (?, ?, ?, ?)"""
-        cursor.execute(query, (document, time, sender_id, friend_id))
-        cursor.commit()
-        cursor.close()
+        # Conexão com banco de dados
+        conn = get_db_connection()
+        cursor = conn.cursor()
 
-        print(f"Documento armazenado com sucesso: {document}")
+        # Verifica se é sala de amigo
+        cursor.execute("SELECT * FROM rooms WHERE room_code = ?", (room,))
+        private_result = cursor.fetchone()
 
-        # else:
-        #     print(f"Erro no upload do documento: {response.text}")
+        if private_result:
+            print(f"[{time}] 📄 Sala (Amigo): {room} | De: {sender_id} Para: {friend_id}")
+            query = """
+                INSERT INTO friendMessages (document, time, sender_id, receiver_id)
+                VALUES (?, ?, ?, ?)
+            """
+            cursor.execute(query, (document, time, sender_id, friend_id))
+
+        else:
+            # Verifica se é grupo
+            cursor.execute("SELECT * FROM groups WHERE uuid = ?", (room,))
+            group_result = cursor.fetchone()
+
+            if group_result:
+                group_id = group_result["id"]
+                print(f"[{time}] 📄 Sala (Grupo): {room} | De: {sender_id}")
+                query = """
+                    INSERT INTO group_messages (group_id, sender_id, receiver_uuid, document, time, timestamp)
+                    VALUES (?, ?, ?, ?, ?, ?)
+                """
+                current_timestamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+                cursor.execute(query, (group_id, sender_id, friend_id, document, time, current_timestamp))
+            else:
+                print("⚠️ Sala não encontrada: nem grupo nem amigos.")
+                return {"status": "error", "reason": "Sala inválida"}
+
+        conn.commit()
 
     except KeyError as e:
         print(f"Campo obrigatório faltando: {str(e)}")
     except Exception as e:
         print(f"Erro no processamento do documento: {str(e)}")
-        import traceback
-        traceback.print_exc()
+    finally:
+        try:
+            cursor.close()
+            conn.close()
+        except Exception:
+            pass
+
+# import traceback
+# traceback.print_exc()
+
 # EMITS de mensagens e etc dos amigos. ================================================
 
 # Criar a aplicação e rodar o WebSocket
