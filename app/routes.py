@@ -5,9 +5,7 @@ from flask import jsonify
 # =============================================
 
 # Rotas de conexão e utilitários
-from app.ping.connection import connection_blueprint
-from app.ping.helloworld import helloworld_blueprint
-from app.ping.email import email_blueprint
+from app.ping import connection_blueprint
 
 # Autenticação de usuário
 from app.users.authentication.user_login import login_blueprint
@@ -36,9 +34,7 @@ from app.services.upload.upload_service import upload_blueprint
 
 def register_routes(app):
     # Rotas básicas de conexão e teste
-    app.register_blueprint(email_blueprint, url_prefix='/email')
-    app.register_blueprint(helloworld_blueprint, url_prefix='/helloworld')
-    app.register_blueprint(connection_blueprint, url_prefix='/connection')
+    app.register_blueprint(connection_blueprint, url_prefix='/ping')
 
     # Rotas de autenticação
     app.register_blueprint(login_blueprint, url_prefix='/login')

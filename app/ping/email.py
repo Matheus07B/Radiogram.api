@@ -5,9 +5,9 @@ from flask import Blueprint, jsonify
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 
-email_blueprint = Blueprint('/email', __name__)
+from . import connection_blueprint
 
-@email_blueprint.route('', methods=['GET'])
+@connection_blueprint.route('/email', methods=['GET'])
 def enviar_email():
     smtp_server = "smtp.gmail.com"
     smtp_port = 587
