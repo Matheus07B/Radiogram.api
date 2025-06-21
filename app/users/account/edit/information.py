@@ -1,15 +1,15 @@
 import os
-import jwt  # ou flask_jwt_extended se você estiver usando jwt manager
+import jwt
 import bcrypt
 
 from datetime import datetime, timedelta
-from flask import Blueprint, request, jsonify
+from werkzeug.utils import secure_filename
+from flask import request, jsonify
 
 from app.utils.decorators import token_required
 from app.models.database import get_db_connection
-from flask_jwt_extended import jwt_required, get_jwt_identity
 
-edit_blueprint = Blueprint('edit', __name__)
+from . import edit_blueprint
 
 SECRET_KEY = os.environ.get("SECRET_KEY")
 
@@ -58,6 +58,11 @@ def edit_profile():
             update_fields.append('senha = ?')
             params.append(hashed_password.decode('utf-8'))
 
+        # Atualiza URL da foto se fornecida
+        if 'pic' in data:
+            update_fields.append('pic = ?')
+            params.append(data['pic'])
+
         if update_fields:
             query = f"UPDATE usuarios SET {', '.join(update_fields)} WHERE userUUID = ?"
             params.append(user_uuid)
@@ -104,4 +109,4 @@ def edit_profile():
     except Exception as e:
         if 'conn' in locals():
             conn.close()
-        return jsonify({'error': 'A atualização não foi concluida!'}), 500
+        return jsonify({'error': 'A atualização não foi concluída!', 'details': str(e)}), 500

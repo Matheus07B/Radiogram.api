@@ -1,10 +1,14 @@
-from flask import Blueprint, request, render_template, send_from_directory, redirect, url_for, abort, jsonify
-from werkzeug.utils import secure_filename
 import os
 import uuid
 import hashlib
 
-upload_blueprint = Blueprint('upload', __name__, template_folder='templates/')
+from werkzeug.utils import secure_filename
+from flask import Blueprint, request, render_template, send_from_directory, redirect, url_for, abort, jsonify
+
+from app.utils.decorators import token_required
+from app.models.database import get_db_connection
+
+from . import upload_blueprint
 
 # Tamanho máximo de 2 GB (em bytes)
 MAX_CONTENT_LENGTH = 2 * 1024 * 1024 * 1024  # 2 GB

@@ -1,4 +1,3 @@
-import re
 import uuid
 
 from flask import Blueprint, jsonify, request
@@ -8,13 +7,13 @@ from app.models.database import get_db_connection
 
 from . import groups_blueprint
 
-@groups_blueprint.route('/add/member', methods=['POST'])
+@groups_blueprint.route('/remove/member', methods=['POST'])
 @token_required
-def add_members():
+def remove_member():
     data = request.json
-    userUUID = data.get('userUUID')
-    numeroDoAmigo = data.get('numero')
-    group_uuid = data.get('group_uuid')
+    userUUID = data.get('userUUID')  # UUID do usuário solicitante
+    numeroDoAmigo = data.get('numero')  # Número do amigo a ser removido
+    group_uuid = data.get('group_uuid')  # UUID do grupo
 
     if not all([userUUID, numeroDoAmigo, group_uuid]):
         return jsonify({'success': False, 'error': 'Dados incompletos'})
@@ -42,18 +41,14 @@ def add_members():
 
     group_id = group_info['id']
 
-    # Verifica se o amigo já está no grupo
+    # Verifica se o amigo realmente está no grupo
     cur.execute("SELECT 1 FROM group_members WHERE group_id = ? AND user_id = ?", (group_id, amigo_id))
-    if cur.fetchone():
+    if not cur.fetchone():
         con.close()
-        return jsonify({'success': False, 'error': 'Usuário já está no grupo'})
+        return jsonify({'success': False, 'error': 'Usuário não está no grupo'})
 
-    # Adiciona o amigo ao grupo
-    cur.execute(
-        "INSERT INTO group_members (user_id, group_id, group_uuid) VALUES (?, ?, ?)",
-        (amigo_id, group_id, group_uuid)
-    )
-
+    # Remove o amigo do grupo
+    cur.execute("DELETE FROM group_members WHERE group_id = ? AND user_id = ?", (group_id, amigo_id))
     con.commit()
     con.close()
 

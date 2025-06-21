@@ -2,16 +2,18 @@ import uuid
 
 from flask import Blueprint, jsonify, request
 
+from app.utils.decorators import token_required
 from app.models.database import get_db_connection
 
 from . import groups_blueprint
 
 @groups_blueprint.route('/create', methods=['POST'])
+@token_required
 def create_group():
     data = request.json
     name = data.get('name')               # Nome do grupo
     user_id = data.get('user_id')         # ID numérico do usuário (para group_members)
-    nome = data.get('nome')               # UUID ou nome do criador (para creator_uuid)
+    nome = data.get('nome')               # Nome do criador
     description = data.get('description') # Descrição opcional
     image_url = data.get('image_url')     # URL da imagem opcional
 
@@ -41,8 +43,11 @@ def create_group():
     cur.execute(query, values)
     group_id = cur.lastrowid
 
-    # Adiciona o criador como membro
-    cur.execute("INSERT INTO group_members (user_id, group_id) VALUES (?, ?)", (user_id, group_id))
+    # Adiciona o criador como membro, incluindo o group_uuid
+    cur.execute(
+        "INSERT INTO group_members (user_id, group_id, group_uuid) VALUES (?, ?, ?)",
+        (user_id, group_id, group_uuid)
+    )
 
     con.commit()
     con.close()
