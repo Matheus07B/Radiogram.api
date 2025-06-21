@@ -28,7 +28,6 @@ A API lida com várias operações, incluindo autenticação de usuários, regis
 - **Rotas de conexão e testes.**
     - `/connection`
         - retorna o status da conexão
-        - `/v2` retorna o status da conexão só que com um v2 no final
     - `/email`
         teste de envio de email. OBS: futuramente será usado para fins de recuperação de conta e etc.
     - `/helloworld`
