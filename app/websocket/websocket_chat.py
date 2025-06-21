@@ -21,6 +21,8 @@ websocket_blueprint = Blueprint('websocket', __name__)
 
 users_rooms = {}  # Mapeia SID do usuário para sua sala atual
 
+public_keys = {}
+
 # Configuração do backend de armazenamento
 STORAGE_API_URL = os.getenv('STORAGE_API_URL')
 
@@ -58,6 +60,39 @@ def handle_leave(data):
         del users_rooms[sid]
         print(f"Usuário {sid} saiu manualmente da sala {room}")
 
+@socketio.on('public_key')
+def handle_public_key(data):
+    user_id = data.get('user_id')
+    room = data.get('room')
+    public_key = data.get('public_key')
+
+    if not user_id or not room or not public_key:
+        print("⚠️ Dados incompletos na chave pública.")
+        return
+
+    # Armazena a chave
+    if room not in public_keys:
+        public_keys[room] = {}
+
+    public_keys[room][user_id] = public_key
+    print(f"🟢 Chave pública recebida de {user_id}: {public_key}")
+
+    # 🔁 Envia as chaves dos outros usuários da sala para o novo usuário (exceto a dele)
+    for uid, pk in public_keys[room].items():
+        if uid != user_id:
+            emit('public_key_of_friend', {
+                'user_id': uid,
+                'public_key': pk
+            }, to=request.sid)  # apenas para o novo usuário
+
+    # 🔁 Envia a chave do novo usuário para os outros usuários da sala (exceto ele mesmo)
+    for sid, sess in socketio.server.manager.rooms['/'].get(room, {}).items():
+        if sid != request.sid:
+            emit('public_key_of_friend', {
+                'user_id': user_id,
+                'public_key': public_key
+            }, to=sid)
+
 # EMITS de mensagens e etc dos amigos. ================================================
 # criptografia
 CRYPT_KEY = Fernet.generate_key()
@@ -79,11 +114,12 @@ def handle_message(data):
         user_id = data.get('user_id')
         friend_id = data.get('friend_id')
         time = data.get('time')
+        iv = data.get("iv")
 
         # Verificação de segurança
-        if not is_message_safe(message):
-            print(f"⚠️ Mensagem bloqueada (conteúdo suspeito): {message}")
-            return {"status": "error", "reason": "Conteúdo não permitido"}
+        # if not is_message_safe(message):
+        #     print(f"⚠️ Mensagem bloqueada (conteúdo suspeito): {message}")
+        #     return {"status": "error", "reason": "Conteúdo não permitido"}
 
         if friend_id is None:
             # print(f"⚠️ ERRO: friend_id está None! Payload recebido: {data}")
@@ -95,6 +131,7 @@ def handle_message(data):
         socketio.emit("message", {
             "room": room,
             "message": message,
+            "iv": iv,                   # ✅ Inclua o IV!
             "time": time,
             "sender": request.sid
         }, room=room)

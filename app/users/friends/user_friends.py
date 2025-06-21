@@ -43,9 +43,36 @@ def list_friends():
         WHERE f.user_id = ?
     ''', (user_id,))
     friends = cursor.fetchall()
+
+    friends_data = []
+    for friend in friends:
+        friend_id = friend["id"]
+
+        # Buscar o room_code correspondente entre os dois usuários
+        cursor.execute('''
+            SELECT room_code FROM rooms
+            WHERE (user1_id = ? AND user2_id = ?)
+               OR (user1_id = ? AND user2_id = ?)
+            LIMIT 1
+        ''', (user_id, friend_id, friend_id, user_id))
+
+        room_row = cursor.fetchone()
+        room_code = room_row["room_code"] if room_row else None
+
+        friends_data.append({
+            "id": friend["id"],
+            "nome": friend["nome"],
+            "email": friend["email"],
+            "telefone": friend["telefone"],
+            "userUUID": friend["userUUID"],
+            "bio": friend["bio"],
+            "pic": friend["pic"],
+            "room_code": room_code  # ✅ Incluído
+        })
+
     conn.close()
 
-   # Buscar grupos
+    # Buscar grupos
     con = get_db_connection()
     cur = con.cursor()
     cur.execute("""
@@ -64,18 +91,6 @@ def list_friends():
     grupos = cur.fetchall()
     con.close()
 
-    # Formatar amigos
-    friends_data = [{
-        "id": friend["id"],
-        "nome": friend["nome"],
-        "email": friend["email"],
-        "telefone": friend["telefone"],
-        "userUUID": friend["userUUID"],
-        "bio": friend["bio"],
-        "pic": friend["pic"]
-    } for friend in friends]
-
-    # Formatar grupos com UUID incluído e total de membros
     grupos_data = [{
         "id": grupo[0],
         "name": grupo[1],
@@ -86,7 +101,6 @@ def list_friends():
         "total_members": grupo[6]
     } for grupo in grupos]
 
-    # Resposta final com amigos e grupos
     return jsonify({
         "friends": friends_data,
         "groups": grupos_data
