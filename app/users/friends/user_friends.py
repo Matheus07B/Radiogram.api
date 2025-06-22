@@ -1,4 +1,5 @@
 import jwt
+import base64
 import sqlite3
 
 from flask_sqlalchemy import SQLAlchemy
@@ -11,6 +12,24 @@ from app.utils.decorators import token_required
 from app.models.database import get_db_connection
 
 from . import friends_blueprint
+
+# def to_base64(b):
+#     return base64.b64encode(b).decode('utf-8') if isinstance(b, bytes) else b
+
+
+def to_base64(data):
+    if data is None:
+        return None
+    # Verifica se 'data' já é bytes ou se precisa ser encodificado
+    if isinstance(data, str):
+        data = data.encode('utf-8') # Ou outro encoding, dependendo do que 'data' representa
+    return base64.b64encode(data).decode('utf-8')
+
+# Exemplo de from_base64 (útil se você decodificar no backend)
+def from_base64(data_str):
+    if data_str is None:
+        return None
+    return base64.b64decode(data_str.encode('utf-8'))
 
 @friends_blueprint.route('/list', methods=['GET'])
 @token_required
@@ -33,11 +52,11 @@ def list_friends():
     except jwt.InvalidTokenError:
         return jsonify({"error": "Token inválido"}), 401
 
-    # Buscar amigos
+    # Buscar amigos e suas chaves públicas
     conn = get_db_connection()
     cursor = conn.cursor()
     cursor.execute('''
-        SELECT u.id, u.nome, u.email, u.telefone, u.userUUID, u.bio, u.pic
+        SELECT u.id, u.nome, u.email, u.telefone, u.userUUID, u.bio, u.pic, u.public_key -- <<-- ADICIONADO u.public_key AQUI!
         FROM friendships f
         JOIN usuarios u ON f.friend_id = u.id
         WHERE f.user_id = ?
@@ -52,7 +71,7 @@ def list_friends():
         cursor.execute('''
             SELECT room_code FROM rooms
             WHERE (user1_id = ? AND user2_id = ?)
-               OR (user1_id = ? AND user2_id = ?)
+                OR (user1_id = ? AND user2_id = ?)
             LIMIT 1
         ''', (user_id, friend_id, friend_id, user_id))
 
@@ -67,12 +86,13 @@ def list_friends():
             "userUUID": friend["userUUID"],
             "bio": friend["bio"],
             "pic": friend["pic"],
-            "room_code": room_code  # ✅ Incluído
+            "room_code": room_code,
+            "public_key": to_base64(friend["public_key"]) # <<-- ADICIONADO AQUI, CONVERTENDO PARA BASE64
         })
 
     conn.close()
 
-    # Buscar grupos
+    # Buscar grupos (mantido igual)
     con = get_db_connection()
     cur = con.cursor()
     cur.execute("""
@@ -137,10 +157,10 @@ def select_friend_chat():
         # Consultar o código da sala entre o usuário autenticado e o amigo
         cursor.execute(
             """
-                SELECT r.room_code 
-                FROM rooms r
-                WHERE (r.user1_id = ? AND r.user2_id = ?) 
-                OR (r.user1_id = ? AND r.user2_id = ?)
+            SELECT r.room_code 
+            FROM rooms r
+            WHERE (r.user1_id = ? AND r.user2_id = ?) 
+            OR (r.user1_id = ? AND r.user2_id = ?)
             """, (user_id, friend_id, friend_id, user_id)
         )
         room = cursor.fetchone()
@@ -150,21 +170,36 @@ def select_friend_chat():
 
         room_code = room["room_code"]
 
-        # Buscar mensagens entre os dois usuários
+        # Não precisamos mais buscar sua chave pública e a do amigo separadamente no final,
+        # pois cada mensagem terá a chave do remetente.
+        # No entanto, podemos manter para o caso de o frontend precisar delas por outros motivos.
+        cursor.execute('SELECT public_key FROM usuarios WHERE id = ?', (user_id,))
+        your_public_key_row = cursor.fetchone()
+        your_public_key = your_public_key_row['public_key'] if your_public_key_row else None
+
+        cursor.execute('SELECT public_key FROM usuarios WHERE id = ?', (friend_id,))
+        friend_public_key_row = cursor.fetchone()
+        friend_public_key = friend_public_key_row['public_key'] if friend_public_key_row else None
+
+
+        # BUSCAR MENSAGENS E AS CHAVES PÚBLICAS DOS REMETENTES
         cursor.execute(
             '''
             SELECT 
                 m.id, 
+                m.iv,
                 m.message, 
                 m.image, 
                 m.video,
                 m.document,
                 m.time, 
                 m.sender_id, 
-                m.receiver_id
+                m.receiver_id,
+                u.public_key AS sender_public_key -- <--- ADICIONAMOS ISSO!
             FROM friendMessages m
+            JOIN usuarios u ON m.sender_id = u.id -- <--- ADICIONAMOS O JOIN!
             WHERE (m.sender_id = ? AND m.receiver_id = ?)
-               OR (m.sender_id = ? AND m.receiver_id = ?)
+                OR (m.sender_id = ? AND m.receiver_id = ?)
             ORDER BY m.timestamp
             ''', (user_id, friend_id, friend_id, user_id)
         )
@@ -174,10 +209,12 @@ def select_friend_chat():
         for message in messages:
             msg_data = {
                 "id": message["id"],
-                "message": message["message"],
+                "iv": to_base64(message["iv"]),
+                "message": to_base64(message["message"]),
                 "time": message["time"],
                 "sender_id": message["sender_id"],
-                "receiver_id": message["receiver_id"]
+                "receiver_id": message["receiver_id"],
+                "sender_public_key": to_base64(message["sender_public_key"]) # <--- ADICIONAMOS ISSO!
             }
 
             if message["image"]:
@@ -191,14 +228,17 @@ def select_friend_chat():
 
             messages_data.append(msg_data)
 
+        # O retorno agora pode ser simplificado, pois cada mensagem terá sua própria chave pública
         return jsonify({
             "room_code": room_code,
-            "messages": messages_data
+            "messages": messages_data,
+            # "sender_public_key": friend_public_key, # Estas duas chaves aqui são menos críticas agora,
+            # "your_public_key": your_public_key      # mas podem ser mantidas se o frontend ainda as usa para algo.
         }), 200
 
     except Exception as e:
-        print(f"Erro no banco de dados: {str(e)}")
-        return jsonify({"error": "Erro interno"}), 500
+        print(f"Erro no backend (list/selected): {str(e)}") # Adicionado contexto ao log
+        return jsonify({"error": "Erro interno no servidor ao carregar mensagens"}), 500
 
     finally:
         conn.close()
@@ -261,7 +301,7 @@ def get_last_message():
         return jsonify({
             "lastMessage": "",
             "time": ""
-        }), 404
+        }), 200
 
 # @friends_blueprint.route('/LA', methods=['GET'])
 # @token_required

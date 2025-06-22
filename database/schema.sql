@@ -7,7 +7,8 @@ CREATE TABLE IF NOT EXISTS usuarios (
     senha TEXT NOT NULL,
     userUUID TEXT,
     bio TEXT,
-    pic TEXT
+    pic TEXT,
+    public_key TEXT
 );
 
 CREATE TABLE IF NOT EXISTS friendships (
@@ -21,6 +22,7 @@ CREATE TABLE IF NOT EXISTS friendships (
 
 CREATE TABLE IF NOT EXISTS friendMessages (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
+    iv TEXT,
     uuid TEXT UNIQUE,
     sender_id INTEGER NOT NULL,
     receiver_id INTEGER NOT NULL,

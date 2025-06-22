@@ -104,68 +104,86 @@ def encrypt_message(message: str) -> str:
 def decrypt_message(token: str) -> str:
     return fernet.decrypt(token.encode()).decode()
 
-# Mensagens.
+def ensure_base64_string(data):
+    # Se já for string, tenta decodificar diretamente
+    if isinstance(data, str):
+        try:
+            base64.b64decode(data, validate=True)
+            return data  # Já é base64 válida
+        except Exception:
+            print("❌ String recebida não é uma base64 válida.")
+            return None
+
+    # Se for bytes ou bytearray, converte para base64 string
+    elif isinstance(data, (bytes, bytearray)):
+        return base64.b64encode(data).decode('utf-8')
+
+    # Tipo inesperado
+    print(f"❌ Tipo de dado inesperado para base64: {type(data)}")
+    return None
+
 @socketio.on('message')
 def handle_message(data):
-    # message = encrypt_message(data.get('message'))
     try:
         room = data.get('room')
-        message = data.get('message')
+        message = data.get('message')  # <- A mensagem já deve estar criptografada (bytes ou string base64)
         user_id = data.get('user_id')
         friend_id = data.get('friend_id')
         time = data.get('time')
-        iv = data.get("iv")
-
-        # Verificação de segurança
-        # if not is_message_safe(message):
-        #     print(f"⚠️ Mensagem bloqueada (conteúdo suspeito): {message}")
-        #     return {"status": "error", "reason": "Conteúdo não permitido"}
+        iv = data.get('iv')  # IV em Base64
 
         if friend_id is None:
-            # print(f"⚠️ ERRO: friend_id está None! Payload recebido: {data}")
-            # friend_id = "1312312"
-            # return {"status": "error", "reason": "friend_id ausente no chat privado"}
             return
 
-        # Envia a mensagem para todos na sala (evento padrão)
+        message = ensure_base64_string(message)
+        iv = ensure_base64_string(iv)
+
+        if message is None or iv is None:
+            print("❌ Erro na validação de base64.")
+            return
+
+        # Envia a mensagem via WebSocket
         socketio.emit("message", {
             "room": room,
             "message": message,
-            "iv": iv,                   # ✅ Inclua o IV!
+            "iv": iv,
             "time": time,
-            "sender": request.sid
+            "sender": user_id
         }, room=room)
 
-        # Conexão com o banco
+        # "sender": request.sid
+
         conn = get_db_connection()
         cursor = conn.cursor()
 
-        # Primeiro tenta verificar se é uma sala privada (amigos)
+        # Verifica se é sala privada
         cursor.execute("SELECT * FROM rooms WHERE room_code = ?", (room,))
-        private_result = cursor.fetchone()
+        private_room = cursor.fetchone()
 
-        if private_result:
-            print(f"[{time}] Sala (Amigo): {room} | De: {user_id} Para: {friend_id} | Mensagem: {message}")
+        if private_room:
+            print(f"[{time}] Sala (Amigo): {room} | De: {user_id} Para: {friend_id} | Mensagem: {message} | IV: {iv}")
+
             query = """
-                INSERT INTO friendMessages (message, time, sender_id, receiver_id)
-                VALUES (?, ?, ?, ?)
+                INSERT INTO friendMessages (message, iv, time, sender_id, receiver_id)
+                VALUES (?, ?, ?, ?, ?)
             """
-            cursor.execute(query, (message, time, user_id, friend_id))
+            cursor.execute(query, (message, iv, time, user_id, friend_id))
 
         else:
-            # Se não for privado, tenta ver se é grupo
             cursor.execute("SELECT * FROM groups WHERE uuid = ?", (room,))
-            group_result = cursor.fetchone()
+            group_room = cursor.fetchone()
 
-            if group_result:
-                group_id = group_result["id"]
+            if group_room:
+                group_id = group_room["id"]
                 print(f"[{time}] Sala (Grupo): {room} | De: {user_id} para {friend_id} | Mensagem: {message}")
+
                 query = """
                     INSERT INTO group_messages (group_id, sender_id, receiver_uuid, message, time, timestamp)
                     VALUES (?, ?, ?, ?, ?, ?)
                 """
                 current_timestamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
                 cursor.execute(query, (group_id, user_id, friend_id, message, time, current_timestamp))
+
             else:
                 print("⚠️ Sala não encontrada: nem grupo nem amigos.")
                 return {"status": "error", "reason": "Sala inválida"}
@@ -173,7 +191,8 @@ def handle_message(data):
         conn.commit()
 
     except Exception as e:
-        print(f"Erro ao processar mensagem: {e}")
+        print(f"❌ Erro ao processar mensagem: {e}")
+
     finally:
         try:
             cursor.close()
