@@ -87,7 +87,7 @@ def list_friends():
             "bio": friend["bio"],
             "pic": friend["pic"],
             "room_code": room_code,
-            "public_key": to_base64(friend["public_key"]) # <<-- ADICIONADO AQUI, CONVERTENDO PARA BASE64
+            "public_key": friend["public_key"] # <<-- ADICIONADO AQUI, CONVERTENDO PARA BASE64
         })
 
     conn.close()
@@ -207,14 +207,23 @@ def select_friend_chat():
 
         messages_data = []
         for message in messages:
+            # msg_data = {
+            #     "id": message["id"],
+            #     "iv": to_base64(message["iv"]),
+            #     "message": to_base64(message["message"]),
+            #     "time": message["time"],
+            #     "sender_id": message["sender_id"],
+            #     "receiver_id": message["receiver_id"],
+            #     "sender_public_key": to_base64(message["sender_public_key"]) 
+            # }
             msg_data = {
                 "id": message["id"],
-                "iv": to_base64(message["iv"]),
-                "message": to_base64(message["message"]),
+                "iv": message["iv"],
+                "message": message["message"],
                 "time": message["time"],
                 "sender_id": message["sender_id"],
                 "receiver_id": message["receiver_id"],
-                "sender_public_key": to_base64(message["sender_public_key"]) # <--- ADICIONAMOS ISSO!
+                "sender_public_key": message["sender_public_key"]
             }
 
             if message["image"]:

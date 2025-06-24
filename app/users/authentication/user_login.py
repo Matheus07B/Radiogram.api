@@ -62,7 +62,9 @@ def login():
             # Convert public_key bytes to Base64 string before adding to payload
             public_key_for_jwt = None
             if usuario["public_key"]: # Check if public_key exists
-                public_key_for_jwt = to_base64(usuario["public_key"]) # Convert to Base64
+                # public_key_for_jwt = to_base64(usuario["public_key"]) # Convert to Base64
+                public_key_for_jwt = usuario["public_key"] # Convert to Base64
+                # print(sasaspublic_key_for_jwt)
 
             payload = {
                 'user_id': usuario["id"],

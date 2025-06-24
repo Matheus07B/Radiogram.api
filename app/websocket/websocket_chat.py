@@ -19,12 +19,13 @@ from app.websocket.security.check_message import is_message_safe
 # websocket_blueprint = Blueprint('chat', __name__)
 websocket_blueprint = Blueprint('websocket', __name__)
 
-users_rooms = {}  # Mapeia SID do usuário para sua sala atual
+users_rooms = {} # Mapeia SID do usuário para sua sala atual
+public_keys = {} # Chave publica do E2EE dos usuarios 
 
-public_keys = {}
-
-# Configuração do backend de armazenamento
+# Configuração do backend de armazenamento e criptografia
 STORAGE_API_URL = os.getenv('STORAGE_API_URL')
+CRYPT_KEY = os.getenv("CRYPT_KEY")
+fernet = Fernet(CRYPT_KEY)
 
 def generate_unique_filename(filename):
     """Gera um nome único baseado em UUID + hash"""
@@ -94,33 +95,38 @@ def handle_public_key(data):
             }, to=sid)
 
 # EMITS de mensagens e etc dos amigos. ================================================
-# criptografia
-CRYPT_KEY = Fernet.generate_key()
-fernet = Fernet(CRYPT_KEY)
-
 def encrypt_message(message: str) -> str:
     return fernet.encrypt(message.encode()).decode()
 
 def decrypt_message(token: str) -> str:
     return fernet.decrypt(token.encode()).decode()
 
-def ensure_base64_string(data):
-    # Se já for string, tenta decodificar diretamente
-    if isinstance(data, str):
-        try:
-            base64.b64decode(data, validate=True)
-            return data  # Já é base64 válida
-        except Exception:
-            print("❌ String recebida não é uma base64 válida.")
-            return None
+# def ensure_base64_string(data):
+#     # Se já for string, tenta decodificar diretamente
+#     if isinstance(data, str):
+#         try:
+#             base64.b64decode(data, validate=True)
+#             return data  # Já é base64 válida
+#         except Exception:
+#             print("❌ String recebida não é uma base64 válida.")
+#             return None
 
-    # Se for bytes ou bytearray, converte para base64 string
-    elif isinstance(data, (bytes, bytearray)):
-        return base64.b64encode(data).decode('utf-8')
+#     # Se for bytes ou bytearray, converte para base64 string
+#     elif isinstance(data, (bytes, bytearray)):
+#         return base64.b64encode(data).decode('utf-8')
 
-    # Tipo inesperado
-    print(f"❌ Tipo de dado inesperado para base64: {type(data)}")
-    return None
+#     # Tipo inesperado
+#     print(f"❌ Tipo de dado inesperado para base64: {type(data)}")
+#     return None
+
+def ensure_base64_string(s):
+    if not isinstance(s, str):
+        return None
+    try:
+        base64.b64decode(s, validate=True)
+        return s
+    except Exception:
+        return None
 
 @socketio.on('message')
 def handle_message(data):
@@ -131,27 +137,34 @@ def handle_message(data):
         friend_id = data.get('friend_id')
         time = data.get('time')
         iv = data.get('iv')  # IV em Base64
+        sender_public_key = data.get('sender_public_key') # <--- PEGA A CHAVE PÚBLICA AQUI
+
+        print("A chave publica do usuario aqui: " + str(sender_public_key)) # Convertendo para string para o print
 
         if friend_id is None:
+            print("❌ Erro: friend_id é None.")
             return
 
-        message = ensure_base64_string(message)
-        iv = ensure_base64_string(iv)
+        # # Garante que message e iv são strings Base64 válidas
+        # # Certifique-se que sua função ensure_base64_string lida corretamente com None ou outros tipos.
+        # message = ensure_base64_string(message)
+        # iv = ensure_base64_string(iv)
+        # # Se sender_public_key também precisa ser validada como string, adicione aqui.
+        # # sender_public_key = ensure_base64_string(sender_public_key) 
 
-        if message is None or iv is None:
-            print("❌ Erro na validação de base64.")
-            return
+        # if message is None or iv is None: # or sender_public_key is None: # Considerar validar a public_key também
+        #     print("❌ Erro na validação de base64 ou dados ausentes (mensagem/IV).")
+        #     return
 
-        # Envia a mensagem via WebSocket
+        # Envia a mensagem via WebSocket para todos na sala
         socketio.emit("message", {
             "room": room,
             "message": message,
             "iv": iv,
             "time": time,
-            "sender": user_id
+            "sender": request.sid,
+            "sender_public_key": sender_public_key,
         }, room=room)
-
-        # "sender": request.sid
 
         conn = get_db_connection()
         cursor = conn.cursor()
@@ -161,7 +174,7 @@ def handle_message(data):
         private_room = cursor.fetchone()
 
         if private_room:
-            print(f"[{time}] Sala (Amigo): {room} | De: {user_id} Para: {friend_id} | Mensagem: {message} | IV: {iv}")
+            print(f"[{time}] Sala (Amigo): {room} | De: {user_id} Para: {friend_id} | Mensagem: {message} | IV: {iv} | Key: {sender_public_key}")
 
             query = """
                 INSERT INTO friendMessages (message, iv, time, sender_id, receiver_id)
@@ -170,6 +183,7 @@ def handle_message(data):
             cursor.execute(query, (message, iv, time, user_id, friend_id))
 
         else:
+            # Lógica para grupos ou outras salas
             cursor.execute("SELECT * FROM groups WHERE uuid = ?", (room,))
             group_room = cursor.fetchone()
 
@@ -195,10 +209,11 @@ def handle_message(data):
 
     finally:
         try:
-            cursor.close()
-            conn.close()
-        except Exception:
-            pass
+            if 'conn' in locals() and conn: # Verifica se 'conn' foi definida antes de tentar fechar
+                cursor.close()
+                conn.close()
+        except Exception as e:
+            print(f"Erro ao fechar conexão com DB: {e}") # Loga o erro ao fechar conexão, se houver
 
 # Fotos.
 @socketio.on('image')
