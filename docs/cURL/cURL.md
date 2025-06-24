@@ -1,4 +1,5 @@
-# Operação usando Postman ou cURL
+# Operação usando Postman ou cURL 
+OBS: aqui ainda terá atualizações futuramente.
 
 <h2 style="border: none">Logar na conta</h2>
 

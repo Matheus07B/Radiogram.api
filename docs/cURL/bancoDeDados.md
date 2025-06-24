@@ -1,4 +1,5 @@
 # Operação direta no banco de dados.
+OBS: aqui ainda terá atualizações futuramente.
 
 <h2 style="border: none">Inserir amizade</h2>
 
