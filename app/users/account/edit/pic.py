@@ -55,8 +55,6 @@ def update_profile_pic():
         os.makedirs(UPLOAD_FOLDER, exist_ok=True)
         file.save(filepath)
 
-        print("AQUI PORRA")
-
         # Atualiza URL no banco
         file_url = url_for('upload.serve_file', filename=filename, _external=True).replace('http://', 'https://')
         print(file_url)
